@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI; // Use TMPro for TextMeshPro
 
 public class FirstPersonCam : MonoBehaviour
 {
@@ -21,11 +22,17 @@ public class FirstPersonCam : MonoBehaviour
 
     [SerializeField] private Vector3 attachedObjectOffset = new Vector3(0, -0.5f, 1);
 
+    [SerializeField] private float raycastDistance = 5.0f;
+    [SerializeField] private LayerMask interactableLayer; // Set in Unity Editor to define which objects are interactable
+    [SerializeField] private Text objectNameText; // Assign the Text component for displaying object names
+
 
     // Start is called before the first frame update
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+
+        objectNameText.enabled = false;
     }
 
     // Update is called once per frame
@@ -40,9 +47,38 @@ public class FirstPersonCam : MonoBehaviour
         Angle = Mathf.Clamp(Angle, -30f, 80f);
         Head.localRotation = Quaternion.Euler(Angle, 0, 0);
 
+        Ray ray = new Ray(Head.position, Head.forward);
         // Picking objects
         RaycastHit hit;
         bool cast = Physics.Raycast(Head.position, Head.forward, out hit, itemPickupDistance);
+
+        if (Physics.Raycast(ray, out hit, raycastDistance, interactableLayer))
+        {
+            // Get the transform of the object hit by the raycast
+            Transform hitTransform = hit.transform;
+
+            // Get the object's name
+            string objectName = hitTransform.name;
+
+            // Get the parent object's name if it exists
+            string parentName = hitTransform.parent != null ? hitTransform.parent.name : null;
+
+            objectNameText.enabled = true;
+
+            if (parentName != null)
+            {
+                objectNameText.text = $"{objectName} ({parentName})"; // Display the name and parent name in parentheses
+            }
+            else
+            {
+                objectNameText.text = objectName; // Display only the object name if no parent exists
+            }
+        }
+        else
+        {
+            // Hide the text if there's no raycast hit
+            objectNameText.enabled = false;
+        }
 
         if (InventoryManager.IsInventoryOpen)
         {
@@ -167,6 +203,5 @@ public class FirstPersonCam : MonoBehaviour
                 Debug.Log("Raycast did not hit any object.");
             }
         }
-
     }
 }

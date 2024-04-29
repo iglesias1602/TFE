@@ -3,13 +3,9 @@ using UnityEngine;
 public class TubeDrawer3D : MonoBehaviour
 {
     public InventoryManager inventoryManager; // Assign in the inspector
-
     public GameObject tubeRendererPrefab; // Prefab with TubeRenderer attached
-
     public Material blackCableMaterial; // Assign in the inspector
     public Material redCableMaterial; // Assign in the inspector
-
-    public bool meshColliderEnabled = true; // This will create a checkbox in the inspector
 
     private Camera mainCamera;
     private bool isDrawing = false;
@@ -25,7 +21,6 @@ public class TubeDrawer3D : MonoBehaviour
 
     void Start()
     {
-        SetMeshColliderState(meshColliderEnabled);
         mainCamera = Camera.main;
     }
     void Update()
@@ -76,10 +71,20 @@ public class TubeDrawer3D : MonoBehaviour
         // Use the layerMask in the Raycast
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
         {
-            // With the layer mask, this check might be redundant, but it's left here as an example.
-            if (hit.collider.gameObject.CompareTag("Cable"))
+            GameObject cableObject = hit.collider.gameObject; // The cable to destroy
+            Cable cableComponent = cableObject.GetComponent<Cable>(); // Get the Cable component
+
+            if (cableComponent != null && cableComponent.startTerminal != null && cableComponent.endTerminal != null)
             {
-                Destroy(hit.collider.gameObject); // Destroy the cable object.
+                CircuitManager.Instance.RemoveConnection(cableComponent.startTerminal, cableComponent.endTerminal); // Remove connection
+                Destroy(cableObject); // Destroy the cable
+                CircuitManager.Instance.OnConnectionRemoved.Invoke(); // Notify about removed connection
+
+                Debug.Log($"Cable destroyed and connection removed between {cableComponent.startTerminal} and {cableComponent.endTerminal}.");
+            }
+            else
+            {
+                Debug.LogError("Cable component or terminals are missing.");
             }
         }
     }
@@ -97,7 +102,14 @@ public class TubeDrawer3D : MonoBehaviour
         {
             startPoint = hit.point;
             GameObject hitObject = hit.collider.gameObject; // Capture the hit object
-            // Proceed to create the cable object if the hit object is interactable
+                                                            // Proceed to create the cable object if the hit object is interactable
+            Node startNode = hitObject?.GetComponent<Node>(); // Ensure safe retrieval of Node component
+            if (startNode == null)
+            {
+                Debug.LogError("No Node component found on the hit object.");
+                return;
+            }
+
             CreateTubeObject(toolName, startPoint, hitObject);
             isSettingStartPoint = false;
         }
@@ -121,7 +133,13 @@ public class TubeDrawer3D : MonoBehaviour
                 Cable cableComponent = currentTubeObject.GetComponent<Cable>();
                 if (cableComponent != null)
                 {
-                    cableComponent.endObject = hitObject; // Now set the end object reference
+                    Node endNode = hitObject?.GetComponent<Node>(); // Retrieve the Node component
+                    if (endNode == null) // If there's no Node, return or log an error
+                    {
+                        Debug.LogError("End object does not contain a Node.");
+                        return;
+                    }
+                    cableComponent.endTerminal = endNode; // Now set the end object reference
                 }
 
                 currentTubeRenderer.SetPositions(new Vector3[] { startPoint, endPoint });
@@ -139,12 +157,22 @@ public class TubeDrawer3D : MonoBehaviour
         Cable cableComponent = currentTubeObject.GetComponent<Cable>();
         if (cableComponent != null)
         {
-            cableComponent.startObject = startObject; // Set the start object reference here
+            Node startNode = NodeManager.FindNodeByGameObject(startObject);  // Get the start node
+            if (startNode == null)
+            {
+                Debug.LogError("Start object does not contain a Node.");
+                return;
+            }
+            cableComponent.startTerminal = startNode; // Set the start object reference here
+
+            // Initially set both start and "end" point to the same to visualize the starting point
+            currentTubeRenderer.SetPositions(new Vector3[] { position, position });
+
+            CircuitManager.Instance.AddConnection(cableComponent.startTerminal, cableComponent.endTerminal);
+            CircuitManager.Instance.OnNewConnection?.Invoke();
         }
 
         SetMaterialBasedOnToolName(toolName);
-        // Initially set both start and "end" point to the same to visualize the starting point
-        currentTubeRenderer.SetPositions(new Vector3[] { position, position });
         isDrawing = true;
     }
 
@@ -179,6 +207,22 @@ public class TubeDrawer3D : MonoBehaviour
 
     void FinalizeDrawing()
     {
+        if (currentTubeObject != null)
+        {
+            // Assuming the endTerminal has been assigned at this point
+            Cable cableComponent = currentTubeObject.GetComponent<Cable>();
+            if (cableComponent != null && cableComponent.startTerminal != null && cableComponent.endTerminal != null)
+            {
+                // Now that we have both terminals, we can add the connection
+                CircuitManager.Instance.AddConnection(cableComponent.startTerminal, cableComponent.endTerminal);
+            }
+            else
+            {
+                Debug.LogError("Cable terminals are not assigned.");
+                Destroy(currentTubeObject); // Remove the incomplete tube
+            }
+        }
+
         isDrawing = false;
         isSettingStartPoint = true; // Ready for a new drawing
         currentTubeRenderer = null; // Clear current TubeRenderer for the next operation
@@ -188,8 +232,18 @@ public class TubeDrawer3D : MonoBehaviour
     {
         if (currentTubeObject != null)
         {
+            // Remove any connection that might have been added
+            Cable cableComponent = currentTubeObject.GetComponent<Cable>();
+            if (cableComponent.startTerminal != null && cableComponent.endTerminal != null)
+            {
+                CircuitManager.Instance.RemoveConnection(cableComponent.startTerminal, cableComponent.endTerminal);
+                CircuitManager.Instance.OnConnectionRemoved?.Invoke(); // Trigger event for connection removal
+
+            }
+
             Destroy(currentTubeObject); // Remove the incomplete tube
         }
+
         ResetDrawingState();
     }
 

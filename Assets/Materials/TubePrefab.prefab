@@ -138,5 +138,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4316e5c3ac8413c4ea46d8f90ced0893, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  startObject: {fileID: 0}
-  endObject: {fileID: 0}
+  startTerminal: {fileID: 0}
+  endTerminal: {fileID: 0}
+  isConnected: 0
+  cableType: standard
+  OnConnected:
+    m_PersistentCalls:
+      m_Calls: []
+  OnDisconnected:
+    m_PersistentCalls:
+      m_Calls: []
