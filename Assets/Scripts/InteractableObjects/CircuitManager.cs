@@ -40,12 +40,28 @@ public class CircuitManager : MonoBehaviour
     private void Start()
     {
         InitializeSwitches(); // Set up switches in the circuit
-        InitializeLEDs(); // Set up LEDs in the circuit
+        InitializeLEDs(); // Set up LEDs in the circui
+        InitializeBattery(); // Set up battery in the circuit
 
         OnNewConnection.AddListener(UpdateCircuit); // Update circuit when a new connection is made
         OnConnectionRemoved.AddListener(UpdateCircuit); // Update circuit when a connection is removed
         OnNewConnection.AddListener(OnNewConnectionHandler); // Listen for new connections
         OnConnectionRemoved.AddListener(OnConnectionRemovedHandler); // Listen for connection removals
+    }
+    private void InitializeBattery()
+    {
+        if (battery != null)
+        {
+            var batteryNodes = battery.GetComponentsInChildren<Node>();
+            foreach (var node in batteryNodes)
+            {
+                node.IsPowered = true; // Mark battery nodes as powered
+                if (!nodes.Contains(node))
+                {
+                    nodes.Add(node); // Ensure battery nodes are added to the node list
+                }
+            }
+        }
     }
 
 
@@ -112,6 +128,9 @@ public class CircuitManager : MonoBehaviour
         {
             node2.ConnectedNodes.Add(node1);
         }
+
+        Debug.Log($"Node {node1.NodeName} now connected to: {string.Join(", ", node1.ConnectedNodes)}");
+        Debug.Log($"Node {node2.NodeName} now connected to: {string.Join(", ", node2.ConnectedNodes)}");
     }
 
     // Remove a connection and trigger relevant events
@@ -175,10 +194,12 @@ public class CircuitManager : MonoBehaviour
         }
 
         nodeStack.Push(startNode);
+        Debug.Log($"Starting DFS from powered node: {startNode.NodeName}");
 
         while (nodeStack.Count > 0) // Traverse connections
         {
             var currentNode = nodeStack.Pop();
+            Debug.Log($"Visiting node: {currentNode.NodeName}");
 
             if (!visitedNodes.Add(currentNode)) // Detect a loop
             {

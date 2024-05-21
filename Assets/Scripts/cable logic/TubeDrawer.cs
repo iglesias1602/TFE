@@ -140,10 +140,12 @@ public class TubeDrawer3D : MonoBehaviour
                         return;
                     }
                     cableComponent.endTerminal = endNode; // Now set the end object reference
+
+                    currentTubeRenderer.SetPositions(new Vector3[] { startPoint, endPoint });
+                    FinalizeDrawing();
                 }
 
-                currentTubeRenderer.SetPositions(new Vector3[] { startPoint, endPoint });
-                FinalizeDrawing();
+                
             }
         }
     }
@@ -157,7 +159,7 @@ public class TubeDrawer3D : MonoBehaviour
         Cable cableComponent = currentTubeObject.GetComponent<Cable>();
         if (cableComponent != null)
         {
-            Node startNode = NodeManager.FindNodeByGameObject(startObject);  // Get the start node
+            Node startNode = startObject.GetComponent<Node>();  // Get the start node
             if (startNode == null)
             {
                 Debug.LogError("Start object does not contain a Node.");
@@ -168,8 +170,10 @@ public class TubeDrawer3D : MonoBehaviour
             // Initially set both start and "end" point to the same to visualize the starting point
             currentTubeRenderer.SetPositions(new Vector3[] { position, position });
 
-            CircuitManager.Instance.AddConnection(cableComponent.startTerminal, cableComponent.endTerminal);
-            CircuitManager.Instance.OnNewConnection?.Invoke();
+            Debug.Log($"Creating tube from {startNode.NodeName} at {position}");
+
+            //CircuitManager.Instance.AddConnection(cableComponent.startTerminal, cableComponent.endTerminal);
+            //CircuitManager.Instance.OnNewConnection?.Invoke();
         }
 
         SetMaterialBasedOnToolName(toolName);
@@ -215,6 +219,8 @@ public class TubeDrawer3D : MonoBehaviour
             {
                 // Now that we have both terminals, we can add the connection
                 CircuitManager.Instance.AddConnection(cableComponent.startTerminal, cableComponent.endTerminal);
+                CircuitManager.Instance.OnNewConnection?.Invoke();
+                Debug.Log($"Finalized drawing tube between {cableComponent.startTerminal.NodeName} and {cableComponent.endTerminal.NodeName}");
             }
             else
             {

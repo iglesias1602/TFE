@@ -30,4 +30,3 @@ public class NodeConnection
         Debug.Log($"NodeConnection: Disconnected {Node1.NodeName} and {Node2.NodeName}.");
     }
 }
-

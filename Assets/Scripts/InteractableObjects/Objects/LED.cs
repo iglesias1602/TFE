@@ -18,7 +18,7 @@ public class LED : MonoBehaviour
         //TurnOff(); // Start with the light off
     }
 
-    void Update()
+   void Update()
     {
         // Example: Dynamic check to turn the light on or off based on `isOn`
         if (isOn)
