@@ -61,6 +61,11 @@ public class CircuitManager : MonoBehaviour
                     nodes.Add(node); // Ensure battery nodes are added to the node list
                 }
             }
+            // Ensure the initial connection between battery terminals is recognized
+            if (battery.positiveTerminal != null && battery.negativeTerminal != null)
+            {
+                AddConnection(battery.positiveTerminal, battery.negativeTerminal);
+            }
         }
     }
 
@@ -98,6 +103,12 @@ public class CircuitManager : MonoBehaviour
             if (!leds.Contains(led))
             {
                 leds.Add(led); // Add LEDs to the list for tracking
+            }
+
+            // Ensure the initial connection between LED terminals is recognized
+            if (led.positiveTerminal != null && led.negativeTerminal != null)
+            {
+                AddConnection(led.positiveTerminal, led.negativeTerminal);
             }
         }
     }

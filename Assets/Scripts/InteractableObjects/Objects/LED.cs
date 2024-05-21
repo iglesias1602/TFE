@@ -5,6 +5,8 @@ public class LED : MonoBehaviour
     public Light pointLight; // Reference to the Light component
     public float defaultIntensity = 4f; // Default light intensity
     public bool isOn = false; // Track whether the LED is on
+    public Node positiveTerminal; // Positive terminal of the LED
+    public Node negativeTerminal; // Negative terminal of the LED
 
     void Start()
     {
@@ -16,9 +18,19 @@ public class LED : MonoBehaviour
         }
 
         //TurnOff(); // Start with the light off
+        // Ensure positive and negative terminals are connected
+        if (positiveTerminal != null && negativeTerminal != null)
+        {
+            positiveTerminal.AddConnection(negativeTerminal);
+            Debug.Log("LED terminals connected: Positive to Negative");
+        }
+        else
+        {
+            Debug.LogError("LED terminals are not assigned.");
+        }
     }
 
-   void Update()
+    void Update()
     {
         // Example: Dynamic check to turn the light on or off based on `isOn`
         if (isOn)

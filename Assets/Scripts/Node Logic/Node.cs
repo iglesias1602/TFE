@@ -22,4 +22,13 @@ public class Node : MonoBehaviour
             node.ConnectedNodes.Add(this); // Ensure bi-directional connection
         }
     }
+
+    public void RemoveConnection(Node node)
+    {
+        if (node != null && ConnectedNodes.Contains(node))
+        {
+            ConnectedNodes.Remove(node);
+            node.ConnectedNodes.Remove(this); // Ensure bi-directional disconnection
+        }
+    }
 }

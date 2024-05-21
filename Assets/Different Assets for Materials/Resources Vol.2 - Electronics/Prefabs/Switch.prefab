@@ -69,7 +69,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NodeName: Positive
   ConnectedNodes: []
-  AttachedComponent: {fileID: 8945398762088141840}
 --- !u!1 &3304098445179146709
 GameObject:
   m_ObjectHideFlags: 0
@@ -139,7 +138,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NodeName: Ground
   ConnectedNodes: []
-  AttachedComponent: {fileID: 8945398762088141840}
 --- !u!1 &8945398762088141840
 GameObject:
   m_ObjectHideFlags: 0
@@ -261,12 +259,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ca548468f3b25a438c441ce63994d31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isClosed: 0
+  node1: {fileID: 2402576590509775529}
+  node2: {fileID: 1888360099343823893}
   OnSwitchToggle:
     m_PersistentCalls:
       m_Calls: []
-  StartNode: {fileID: 2402576590509775529}
-  EndNode: {fileID: 1888360099343823893}
-  SwitchName: Default Switch
 --- !u!1001 &7405929644616171127
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -121,10 +121,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ee912f5802a86e541b87c32e91909e35, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Voltage: 9
-  PositiveNode: {fileID: 3496611539308491560}
-  NegativeNode: {fileID: 7205713893332516345}
-  BatteryName: Default Battery
+  positiveTerminal: {fileID: 3496611539308491560}
+  negativeTerminal: {fileID: 7205713893332516345}
 --- !u!1 &439942386073161743
 GameObject:
   m_ObjectHideFlags: 0
@@ -193,8 +191,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   NodeName: Positive
-  ConnectedNodes: []
-  AttachedComponent: {fileID: 305773342676478503}
 --- !u!1 &3574049653684416599
 GameObject:
   m_ObjectHideFlags: 0
@@ -263,8 +259,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   NodeName: Ground
-  ConnectedNodes: []
-  AttachedComponent: {fileID: 305773342676478503}
 --- !u!1001 &1928823724365824472
 PrefabInstance:
   m_ObjectHideFlags: 0

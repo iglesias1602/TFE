@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Battery : MonoBehaviour
 {
+    public Node positiveTerminal;
+    public Node negativeTerminal;
     public List<Node> connections;
 
     void Start()
@@ -12,6 +14,16 @@ public class Battery : MonoBehaviour
         foreach (var node in connections)
         {
             node.IsPowered = true; // Set connected nodes as powered
+        }
+
+        if (positiveTerminal != null && negativeTerminal != null)
+        {
+            positiveTerminal.AddConnection(negativeTerminal);
+            Debug.Log("Battery terminals connected: Positive to Negative");
+        }
+        else
+        {
+            Debug.LogError("Battery terminals are not assigned.");
         }
     }
 
