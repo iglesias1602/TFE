@@ -36,7 +36,6 @@ public class FirstPersonCam : MonoBehaviour
     }
 
     // Update is called once per frame
-    // Update is called once per frame
     private void Update()
     {
         MouseX = Input.GetAxis("Mouse X") * sensX * Time.deltaTime;

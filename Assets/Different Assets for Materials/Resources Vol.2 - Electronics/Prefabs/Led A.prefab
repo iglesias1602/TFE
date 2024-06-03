@@ -122,9 +122,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c19f4f53f37e5f04a9a3c46ee6c91ef5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  minIntensity: 0
-  maxIntensity: 5
+  pointLight: {fileID: 2519994955786312963}
+  defaultIntensity: 4
   isOn: 0
+  positiveTerminal: {fileID: 761653282280490553}
+  negativeTerminal: {fileID: 6292999702970226966}
 --- !u!1 &4081931802170981734
 GameObject:
   m_ObjectHideFlags: 0
@@ -194,7 +196,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NodeName: Ground
   ConnectedNodes: []
-  AttachedComponent: {fileID: 3462014899077307752}
 --- !u!1 &4165643397636658550
 GameObject:
   m_ObjectHideFlags: 0
@@ -382,7 +383,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NodeName: Positive
   ConnectedNodes: []
-  AttachedComponent: {fileID: 3462014899077307752}
 --- !u!1001 &5453332918718456095
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -6,11 +6,10 @@ public class Node : MonoBehaviour
 {
     public string NodeName;
     public bool IsPowered { get; set; }
-    public List<Node> ConnectedNodes;
+    public List<Node> ConnectedNodes = new List<Node>();
 
     void Start()
     {
-        ConnectedNodes = new List<Node>();
         IsPowered = false; // Default to not powered
     }
 
@@ -20,6 +19,7 @@ public class Node : MonoBehaviour
         {
             ConnectedNodes.Add(node);
             node.ConnectedNodes.Add(this); // Ensure bi-directional connection
+            Debug.Log($"Connection added between {this.NodeName} and {node.NodeName}");
         }
     }
 
@@ -29,6 +29,7 @@ public class Node : MonoBehaviour
         {
             ConnectedNodes.Remove(node);
             node.ConnectedNodes.Remove(this); // Ensure bi-directional disconnection
+            Debug.Log($"Connection removed between {this.NodeName} and {node.NodeName}");
         }
     }
 }

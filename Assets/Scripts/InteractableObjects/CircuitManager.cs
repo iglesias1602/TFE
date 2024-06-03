@@ -39,36 +39,55 @@ public class CircuitManager : MonoBehaviour
 
     private void Start()
     {
-        InitializeSwitches(); // Set up switches in the circuit
-        InitializeLEDs(); // Set up LEDs in the circui
-        InitializeBattery(); // Set up battery in the circuit
-
+        InitializeConnections(); // Set up connections in the circuit
+        InitializeNodes(); // Set up nodes in the circuit
         OnNewConnection.AddListener(UpdateCircuit); // Update circuit when a new connection is made
         OnConnectionRemoved.AddListener(UpdateCircuit); // Update circuit when a connection is removed
         OnNewConnection.AddListener(OnNewConnectionHandler); // Listen for new connections
         OnConnectionRemoved.AddListener(OnConnectionRemovedHandler); // Listen for connection removals
     }
-    private void InitializeBattery()
+
+
+    private void InitializeConnections()
     {
-        if (battery != null)
+        // Manually set up connections for the battery
+        if (battery != null && battery.positiveTerminal != null && battery.negativeTerminal != null)
         {
-            var batteryNodes = battery.GetComponentsInChildren<Node>();
-            foreach (var node in batteryNodes)
+            AddConnection(battery.positiveTerminal, battery.negativeTerminal);
+        }
+
+        // Manually set up connections for LEDs
+        foreach (LED led in leds)
+        {
+            if (led.positiveTerminal != null && led.negativeTerminal != null)
             {
-                node.IsPowered = true; // Mark battery nodes as powered
-                if (!nodes.Contains(node))
-                {
-                    nodes.Add(node); // Ensure battery nodes are added to the node list
-                }
+                AddConnection(led.positiveTerminal, led.negativeTerminal);
             }
-            // Ensure the initial connection between battery terminals is recognized
-            if (battery.positiveTerminal != null && battery.negativeTerminal != null)
+        }
+
+        // Manually set up connections for switches
+        foreach (Switch sw in switches)
+        {
+            if (sw.node1 != null && sw.node2 != null && sw.isClosed)
             {
-                AddConnection(battery.positiveTerminal, battery.negativeTerminal);
+                AddConnection(sw.node1, sw.node2);
             }
         }
     }
 
+    private void InitializeNodes()
+{
+    // Clear existing nodes
+    nodes.Clear();
+
+    // Find all nodes in the scene and add them to the list
+    Node[] allNodes = FindObjectsOfType<Node>();
+    foreach (Node node in allNodes)
+    {
+        nodes.Add(node);
+        Debug.Log($"Node added: {node.NodeName}, IsPowered: {node.IsPowered}");
+    }
+}
 
     private void OnNewConnectionHandler()
     {
@@ -78,39 +97,6 @@ public class CircuitManager : MonoBehaviour
     private void OnConnectionRemovedHandler()
     {
         Debug.Log("Connection removal event triggered.");
-    }
-
-    // Initialize and set up switches in the circuit
-    private void InitializeSwitches()
-    {
-        Switch[] foundSwitches = GetComponentsInChildren<Switch>();
-        foreach (var sw in foundSwitches)
-        {
-            if (!switches.Contains(sw))
-            {
-                switches.Add(sw);
-                sw.OnSwitchToggle.AddListener(UpdateCircuit); // Add event listener for circuit updates
-            }
-        }
-    }
-
-    // Initialize and set up LEDs in the circuit
-    private void InitializeLEDs()
-    {
-        LED[] foundLEDs = GetComponentsInChildren<LED>();
-        foreach (var led in foundLEDs)
-        {
-            if (!leds.Contains(led))
-            {
-                leds.Add(led); // Add LEDs to the list for tracking
-            }
-
-            // Ensure the initial connection between LED terminals is recognized
-            if (led.positiveTerminal != null && led.negativeTerminal != null)
-            {
-                AddConnection(led.positiveTerminal, led.negativeTerminal);
-            }
-        }
     }
 
     // Add a new connection and trigger relevant events
@@ -170,7 +156,6 @@ public class CircuitManager : MonoBehaviour
     // Update the circuit based on the current connections
     public void UpdateCircuit()
     {
-
         // Check if the circuit is closed
         bool isCircuitClosed = IsCircuitClosed();
 
@@ -193,39 +178,38 @@ public class CircuitManager : MonoBehaviour
     public bool IsCircuitClosed()
     {
         var visitedNodes = new HashSet<Node>();
-        var nodeStack = new Stack<Node>();
+        var nodeQueue = new Queue<Node>();  // Utilisez une file d'attente au lieu d'une pile
 
-        // Find a powered node as the starting point
+        // Trouver un noeud alimenté comme point de départ
         var startNode = nodes.Find(n => n.IsPowered);
 
-        if (startNode == null) // No starting point, no circuit
+        if (startNode == null)  // Pas de point de départ, pas de circuit
         {
             Debug.LogWarning("No powered node found. Circuit cannot be closed.");
             return false;
         }
 
-        nodeStack.Push(startNode);
-        Debug.Log($"Starting DFS from powered node: {startNode.NodeName}");
+        nodeQueue.Enqueue(startNode);
+        Debug.Log($"Starting BFS from powered node: {startNode.NodeName}");
 
-        while (nodeStack.Count > 0) // Traverse connections
+        while (nodeQueue.Count > 0)  // Parcourir les connexions
         {
-            var currentNode = nodeStack.Pop();
+            var currentNode = nodeQueue.Dequeue();
             Debug.Log($"Visiting node: {currentNode.NodeName}");
 
-            if (!visitedNodes.Add(currentNode)) // Detect a loop
+            if (!visitedNodes.Add(currentNode))  // Détecter une boucle
             {
                 Debug.Log("Circuit is closed.");
                 return true;
             }
 
-            // Traverse connected nodes
+            // Parcourir les noeuds connectés
             foreach (var connectedNode in currentNode.ConnectedNodes)
             {
                 if (!visitedNodes.Contains(connectedNode))
                 {
-                    nodeStack.Push(connectedNode);
+                    nodeQueue.Enqueue(connectedNode);
                     Debug.Log($"Adding node to check: {connectedNode.NodeName}");
-
                 }
             }
         }
@@ -233,6 +217,7 @@ public class CircuitManager : MonoBehaviour
         Debug.Log("Circuit is not closed.");
         return false;
     }
+
 
 
     // Turn on all LEDs in the circuit

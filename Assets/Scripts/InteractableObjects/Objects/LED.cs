@@ -17,7 +17,8 @@ public class LED : MonoBehaviour
             return;
         }
 
-        //TurnOff(); // Start with the light off
+        TurnOff(); // Start with the light off
+
         // Ensure positive and negative terminals are connected
         if (positiveTerminal != null && negativeTerminal != null)
         {
