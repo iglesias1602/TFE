@@ -67,7 +67,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54d7048f995bdc8449234b98dd93be3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NodeName: Led_Positive
+  NodeName: Led_Positive2
   ConnectedNodes: []
 --- !u!1 &2731831443362339964
 GameObject:
@@ -399,7 +399,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54d7048f995bdc8449234b98dd93be3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NodeName: Ground
+  NodeName: Led_Ground2
   ConnectedNodes: []
 --- !u!1001 &1056689226058049254
 PrefabInstance:

@@ -18,6 +18,16 @@ public class CircuitManager : MonoBehaviour
 
     private void Awake()
     {
+        leds = new List<LED>(FindObjectsOfType<LED>());
+        if (leds.Count == 0)
+        {
+            Debug.LogError("No LEDs found in the scene.");
+        }
+        else
+        {
+            Debug.Log(leds.Count + " LEDs found and added to the list.");
+        }
+
         if (Instance == null)
         {
             Instance = this;
@@ -59,9 +69,9 @@ public class CircuitManager : MonoBehaviour
         // Manually set up connections for LEDs
         foreach (LED led in leds)
         {
-            if (led.positiveTerminal != null && led.negativeTerminal != null)
+            if (led.GetPositiveTerminal() != null && led.GetNegativeTerminal() != null)
             {
-                AddConnection(led.positiveTerminal, led.negativeTerminal);
+                AddConnection(led.GetPositiveTerminal(), led.GetNegativeTerminal());
             }
         }
 
@@ -218,28 +228,45 @@ public class CircuitManager : MonoBehaviour
         return false;
     }
 
+    // Check if an LED is connected in the circuit
+    public bool IsLEDConnected(LED led)
+    {
+        Node positive = led.GetPositiveTerminal();
+        Node negative = led.GetNegativeTerminal();
 
+        // Check if both terminals are not null and there exists a connection between them
+        if (positive != null && negative != null)
+        {
+            return connections.Exists(c =>
+                (c.Node1 == positive && c.Node2 == negative) ||
+                (c.Node1 == negative && c.Node2 == positive));
+        }
+        return false;
+    }
 
-    // Turn on all LEDs in the circuit
+    // Turn on all LEDs that are part of a closed circuit
     private void TurnOnLEDs()
     {
-        foreach (var led in leds)
+        if (IsCircuitClosed())  // Only proceed if the circuit is closed
         {
-            if (led != null)
+            foreach (var led in leds)
             {
-                led.TurnOn(); // Light up when the circuit is closed
+                if (led != null && IsLEDConnected(led))
+                {
+                    led.TurnOn(); // Only turn on the LED if it's connected in a closed circuit
+                }
             }
         }
     }
 
-    // Turn off all LEDs in the circuit
+    // Turn off all LEDs
     private void TurnOffLEDs()
     {
         foreach (var led in leds)
         {
             if (led != null)
             {
-                led.TurnOff(); // Turn off when the circuit is open
+                led.TurnOff(); // Always turn off LEDs if the circuit is open
             }
         }
     }

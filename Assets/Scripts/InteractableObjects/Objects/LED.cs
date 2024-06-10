@@ -2,55 +2,33 @@ using UnityEngine;
 
 public class LED : MonoBehaviour
 {
-    public Light pointLight; // Reference to the Light component
-    public float defaultIntensity = 4f; // Default light intensity
-    public bool isOn = false; // Track whether the LED is on
-    public Node positiveTerminal; // Positive terminal of the LED
-    public Node negativeTerminal; // Negative terminal of the LED
-
-    void Start()
+    [SerializeField] private Light pointLight; // Reference to the Light component, can be assigned in the editor
+    [SerializeField] private float defaultIntensity = 4f; // Default light intensity, adjustable in editor
+    [SerializeField] private bool isOn = false; // Track whether the LED is on
+    [SerializeField] private Node positiveTerminal; // Positive terminal of the LED
+    [SerializeField] private Node negativeTerminal; // Negative terminal of the LED
+    public Node GetPositiveTerminal()
     {
-        pointLight = GetComponentInChildren<Light>(); // Get the light component
-        if (pointLight == null)
-        {
-            Debug.LogError("Light component is missing.");
-            return;
-        }
-
-        TurnOff(); // Start with the light off
-
-        // Ensure positive and negative terminals are connected
-        if (positiveTerminal != null && negativeTerminal != null)
-        {
-            positiveTerminal.AddConnection(negativeTerminal);
-            Debug.Log("LED terminals connected: Positive to Negative");
-        }
-        else
-        {
-            Debug.LogError("LED terminals are not assigned.");
-        }
+        return positiveTerminal;
     }
 
-    void Update()
+    public Node GetNegativeTerminal()
     {
-        // Example: Dynamic check to turn the light on or off based on `isOn`
-        if (isOn)
-        {
-            if (!pointLight.enabled) // Avoid unnecessary re-enabling
-            {
-                pointLight.enabled = true;
-                pointLight.intensity = defaultIntensity;
-                Debug.Log("LED turned on in Update().");
-            }
-        }
-        else
-        {
-            if (pointLight.enabled) // Avoid unnecessary re-disabling
-            {
-                pointLight.enabled = false;
-                Debug.Log("LED turned off in Update().");
-            }
-        }
+        return negativeTerminal;
+    }
+
+    private void Awake()
+    {
+        // Validate and configure the LED setup
+        SetupLightComponent();
+        SetupTerminals();
+        UpdateLightState();
+    }
+
+    private void Update()
+    {
+        // Update the light state based on `isOn`
+        UpdateLightState();
     }
 
     public void TurnOn()
@@ -65,8 +43,50 @@ public class LED : MonoBehaviour
 
     public void AdjustIntensity(float intensity)
     {
+        if (pointLight != null)
+        {
+            pointLight.intensity = Mathf.Clamp(intensity, 0f, defaultIntensity); // Adjust intensity safely
+        }
+    }
+
+    private void SetupLightComponent()
+    {
+        // Ensure there is a Light component
+        pointLight = GetComponentInChildren<Light>();
+        if (pointLight == null)
+        {
+            Debug.LogError("Light component is missing in " + gameObject.name);
+        }
+    }
+
+    private void SetupTerminals()
+    {
+        // Ensure terminals are properly connected
+        if (positiveTerminal != null && negativeTerminal != null)
+        {
+            positiveTerminal.AddConnection(negativeTerminal);
+            Debug.Log("LED terminals connected: Positive to Negative");
+        }
+        else
+        {
+            Debug.LogError("LED terminals are not assigned in " + gameObject.name);
+        }
+    }
+
+    private void UpdateLightState()
+    {
         if (pointLight == null) return;
 
-        pointLight.intensity = Mathf.Clamp(intensity, 0f, defaultIntensity); // Adjust intensity
+        if (isOn && !pointLight.enabled)
+        {
+            pointLight.enabled = true;
+            pointLight.intensity = defaultIntensity;
+            Debug.Log("LED turned on.");
+        }
+        else if (!isOn && pointLight.enabled)
+        {
+            pointLight.enabled = false;
+            Debug.Log("LED turned off.");
+        }
     }
 }
