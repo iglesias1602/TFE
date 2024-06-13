@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -179,24 +177,6 @@ public class InventoryManager : MonoBehaviour
         // Lock and hide cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-    }
-
-    private void DisableOtherInteractions(bool shouldDisable)
-    {
-        // Example of disabling a hypothetical player controller
-        // This is where you would also disable any other scripts or game objects that should not be active while the inventory is open
-        // For instance:
-        // playerController.enabled = !shouldDisable;
-
-        // If you have a global game manager or other scripts controlling interactable game objects, toggle their state here
-        // Example:
-        // interactableObjectController.SetActive(!shouldDisable);
-
-        // Disable drawing cables if you have an activeWireController reference
-        if (activeWireController != null)
-        {
-            activeWireController.enabled = !shouldDisable;
-        }
     }
 
     #endregion Toggle Inventory feature

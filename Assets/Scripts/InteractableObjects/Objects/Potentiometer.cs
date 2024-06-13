@@ -15,8 +15,6 @@ public class Potentiometer : MonoBehaviour
 
     private PotentiometerMenu potentiometerMenu;
 
-    private NodeConnection connectionAB;
-    private NodeConnection connectionAC;
     public float Resistance
     {
         get => resistance;

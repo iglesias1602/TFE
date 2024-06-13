@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -19,7 +17,7 @@ public class FirstPersonCam : MonoBehaviour
 
     [SerializeField] private float itemPickupDistance;
     private Transform attachedObject = null;
-    [SerializeField] private Vector3 attachedObjectOffset = new Vector3(0, -0.5f, 1);
+    [SerializeField] private Vector3 attachedObjectOffset = new(0, -0.5f, 1);
 
     [SerializeField] private float raycastDistance = 5.0f;
     [SerializeField] private LayerMask interactableLayer;
@@ -81,9 +79,8 @@ public class FirstPersonCam : MonoBehaviour
 
     private void HandleRaycast()
     {
-        Ray ray = new Ray(head.position, head.forward);
-        RaycastHit hit;
-        bool hitInteractable = Physics.Raycast(ray, out hit, raycastDistance, interactableLayer);
+        Ray ray = new(head.position, head.forward);
+        bool hitInteractable = Physics.Raycast(ray, out RaycastHit hit, raycastDistance, interactableLayer);
 
         if (hitInteractable)
         {
@@ -118,12 +115,11 @@ public class FirstPersonCam : MonoBehaviour
         {
             return;
         }
-    }    
+    }
 
     private void HandleRightClick()
     {
-        RaycastHit hit;
-        bool cast = Physics.Raycast(head.position, head.forward, out hit, itemPickupDistance);
+        bool cast = Physics.Raycast(head.position, head.forward, out RaycastHit hit, itemPickupDistance);
 
         if (attachedObject == null)
         {
@@ -206,8 +202,7 @@ public class FirstPersonCam : MonoBehaviour
         }
         else
         {
-            RaycastHit hit;
-            if (Physics.Raycast(head.position, head.forward, out hit, itemPickupDistance))
+            if (Physics.Raycast(head.position, head.forward, out RaycastHit hit, itemPickupDistance))
             {
                 Potentiometer potentiometer = hit.collider.GetComponent<Potentiometer>();
                 if (potentiometer != null)
@@ -222,8 +217,7 @@ public class FirstPersonCam : MonoBehaviour
 
     private void TryConnectObject()
     {
-        RaycastHit hit;
-        if (Physics.Raycast(head.position, head.forward, out hit, itemPickupDistance))
+        if (Physics.Raycast(head.position, head.forward, out RaycastHit hit, itemPickupDistance))
         {
             PlugController plugController = hit.collider?.GetComponent<PlugController>();
 
@@ -279,7 +273,7 @@ public class FirstPersonCam : MonoBehaviour
         Battery newBattery = newObject.GetComponentInChildren<Battery>();
         if (newBattery != null)
         {
-            CircuitManager.Instance.AddBattery(newBattery);
+            CircuitManager.Instance.AddBatteryToCircuit(newBattery);
         }
 
         CircuitManager.Instance.UpdateCircuit();

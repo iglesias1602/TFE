@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerMovementUpdate : MonoBehaviour
@@ -14,8 +12,7 @@ public class PlayerMovementUpdate : MonoBehaviour
     float verticalInput;
 
     Vector3 moveDirection;
-
-    Rigidbody rb;
+    readonly Rigidbody rb;
 
     // Start is called before the first frame update
     private void Start()
@@ -26,14 +23,14 @@ public class PlayerMovementUpdate : MonoBehaviour
 
     private void Update()
     {
-        MyInput();  
+        MyInput();
     }
 
     private void FixedUpdate()
     {
         MovePlayer();
     }
-    private void MyInput() 
+    private void MyInput()
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");

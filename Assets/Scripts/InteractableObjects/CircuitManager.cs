@@ -10,12 +10,12 @@ public class CircuitManager : MonoBehaviour
     public UnityEvent OnConnectionRemoved; // Event to signal connection removal
     public UnityEvent OnCircuitUpdated; // Event for circuit updates
 
-    public List<NodeConnection> connections = new List<NodeConnection>(); // Manage all connections in the circuit
-    public List<Node> nodes = new List<Node>(); // Manage all nodes in the circuit
-    public List<Switch> switches = new List<Switch>(); // Manage all switches in the circuit
-    public List<LED> leds = new List<LED>(); // Manage all LEDs in the circuit
-    public List<Potentiometer> potentiometers = new List<Potentiometer>(); // Manage all potentiometers in the circuit
-    public List<Battery> batteries = new List<Battery>(); // Manage all batteries in the circuit
+    public List<NodeConnection> connections = new(); // Manage all connections in the circuit
+    public List<Node> nodes = new(); // Manage all nodes in the circuit
+    public List<Switch> switches = new(); // Manage all switches in the circuit
+    public List<LED> leds = new(); // Manage all LEDs in the circuit
+    public List<Potentiometer> potentiometers = new(); // Manage all potentiometers in the circuit
+    public List<Battery> batteries = new(); // Manage all batteries in the circuit
     public string circuitName; // Optional identifier for the circuit
 
     #endregion Variables
@@ -121,27 +121,35 @@ public class CircuitManager : MonoBehaviour
 
     private void InitializeConnections()
     {
-        AddBatteryConnections();
+        AddBatteryConnection();
         AddLEDConnections();
         AddSwitchConnections();
         AddPotentiometerConnections();
     }
 
     #region Adding connections
-    private void AddBatteryConnections()
+    private void AddBatteryConnection()
     {
-        foreach (Battery battery in batteries)
+        foreach (var battery in batteries)
         {
-            AddBatteryToCircuit(battery);
+            if (battery.positiveTerminal != null && battery.negativeTerminal != null)
+            {
+                AddConnection(battery.positiveTerminal, battery.negativeTerminal);
+            }
         }
     }
 
     private void AddLEDConnections()
     {
         // Create a copy of the list to avoid modifying the collection while iterating
-        foreach (LED led in leds)
+        var tempLEDs = new List<LED>(leds);
+
+        foreach (LED led in tempLEDs)
         {
-            AddLEDToCircuit(led);
+            if (!leds.Contains(led)) // Ensure the LED is not already added
+            {
+                AddLEDToCircuit(led);
+            }
         }
     }
 
@@ -158,9 +166,14 @@ public class CircuitManager : MonoBehaviour
 
     private void AddPotentiometerConnections()
     {
-        foreach (Potentiometer potentiometer in potentiometers)
+        var tempPotentiometers = new List<Potentiometer>(potentiometers);
+
+        foreach (Potentiometer potentiometer in tempPotentiometers)
         {
-            AddPotentiometerToCircuit(potentiometer);
+            if (!potentiometers.Contains(potentiometer)) // Ensure the potentiometer is not already added
+            {
+                AddPotentiometerToCircuit(potentiometer);
+            }
         }
     }
     #endregion Adding connections
@@ -231,24 +244,22 @@ public class CircuitManager : MonoBehaviour
     }
 
     // Method to add a new battery
-    public void AddBattery(Battery battery)
+    public void AddBatteryToCircuit(Battery battery)
     {
         if (!batteries.Contains(battery))
         {
             batteries.Add(battery);
-            AddBatteryToCircuit(battery);
-            OnCircuitUpdated.Invoke();
-        }
-    }
-
-    private void AddBatteryToCircuit(Battery battery)
-    {
-        if (battery.positiveTerminal != null && battery.negativeTerminal != null)
-        {
             AddConnection(battery.positiveTerminal, battery.negativeTerminal);
-            if (!nodes.Contains(battery.positiveTerminal)) nodes.Add(battery.positiveTerminal);
-            if (!nodes.Contains(battery.negativeTerminal)) nodes.Add(battery.negativeTerminal);
+            foreach (var node in battery.connections)
+            {
+                if (!nodes.Contains(node))
+                {
+                    nodes.Add(node);
+                }
+                node.IsPowered = true;
+            }
         }
+        OnCircuitUpdated.Invoke();
     }
 
     // Add a new connection and trigger relevant events
@@ -358,8 +369,11 @@ public class CircuitManager : MonoBehaviour
     private float CalculateLEDIntensity(float resistance)
     {
 
-        float batteryVoltage = batteries.Count > 0 ? batteries[0].GetVoltage() : 9f;
-
+        float batteryVoltage = 0f;
+        foreach (var battery in batteries)
+        {
+            batteryVoltage += battery.GetVoltage();
+        }
         // Calculate the current using Ohm's Law: I = V / R
         float current = batteryVoltage / resistance;
 
@@ -373,44 +387,68 @@ public class CircuitManager : MonoBehaviour
     }
 
     // Check if the circuit is closed by detecting loops
+    private bool lastCircuitState = false; // Store the last known state of the circuit
+
     public bool IsCircuitClosed()
     {
         var visitedNodes = new HashSet<Node>();
         var parentNodes = new Dictionary<Node, Node>();
         var nodeQueue = new Queue<Node>();
 
-        var startNode = nodes.Find(n => n.IsPowered);
-        if (startNode == null)
+        // Find all powered nodes
+        var poweredNodes = nodes.FindAll(n => n.IsPowered);
+        if (poweredNodes.Count == 0)
         {
-            // Debug.LogWarning("No powered node found. Circuit cannot be closed.");
+            if (lastCircuitState != false)
+            {
+                Debug.LogWarning("No powered node found. Circuit cannot be closed.");
+                lastCircuitState = false;
+            }
             return false;
         }
 
-        nodeQueue.Enqueue(startNode);
-        visitedNodes.Add(startNode);
-
-        while (nodeQueue.Count > 0)
+        foreach (var startNode in poweredNodes)
         {
-            var currentNode = nodeQueue.Dequeue();
-            foreach (var connectedNode in currentNode.ConnectedNodes)
+            nodeQueue.Enqueue(startNode);
+            visitedNodes.Add(startNode);
+
+            while (nodeQueue.Count > 0)
             {
-                if (!visitedNodes.Contains(connectedNode))
+                var currentNode = nodeQueue.Dequeue();
+                foreach (var connectedNode in currentNode.ConnectedNodes)
                 {
-                    visitedNodes.Add(connectedNode);
-                    parentNodes[connectedNode] = currentNode;
-                    nodeQueue.Enqueue(connectedNode);
-                }
-                else if (parentNodes[currentNode] != connectedNode)
-                {
-                    // Debug.Log("Circuit is closed.");
-                    return true; // A loop is detected
+                    if (!visitedNodes.Contains(connectedNode))
+                    {
+                        visitedNodes.Add(connectedNode);
+                        parentNodes[connectedNode] = currentNode;
+                        nodeQueue.Enqueue(connectedNode);
+                    }
+                    else if (parentNodes.ContainsKey(currentNode) && parentNodes[currentNode] != connectedNode)
+                    {
+                        if (lastCircuitState != true)
+                        {
+                            Debug.Log("Circuit is closed.");
+                            lastCircuitState = true;
+                        }
+                        return true; // A loop is detected
+                    }
                 }
             }
+
+            // Clear visited nodes and queue for the next start node
+            visitedNodes.Clear();
+            parentNodes.Clear();
+            nodeQueue.Clear();
         }
 
-        // Debug.Log("Circuit is not closed.");
+        if (lastCircuitState != false)
+        {
+            Debug.Log("Circuit is not closed.");
+            lastCircuitState = false;
+        }
         return false;
     }
+
 
     // Check if an LED is connected in the circuit
     public bool IsLEDConnected(LED led)
