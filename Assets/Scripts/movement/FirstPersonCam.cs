@@ -5,207 +5,235 @@ using UnityEngine.UI;
 
 public class FirstPersonCam : MonoBehaviour
 {
-    public float MouseX;
-    public float MouseY;
+    public static FirstPersonCam Instance;
+    public float MouseX { get; private set; }
+    public float MouseY { get; private set; }
 
-    [SerializeField] float sensX;
-    [SerializeField] float sensY;
+    [SerializeField] private float sensX;
+    [SerializeField] private float sensY;
 
-    public Transform Body;
-    public Transform Head;
+    [SerializeField] private Transform body;
+    [SerializeField] private Transform head;
 
-    public float Angle;
+    private float angle;
 
-    public float itemPickupDistance;
-    Transform attachedObject = null;
-    //float attachedDistance = 0f;
-
+    [SerializeField] private float itemPickupDistance;
+    private Transform attachedObject = null;
     [SerializeField] private Vector3 attachedObjectOffset = new Vector3(0, -0.5f, 1);
 
     [SerializeField] private float raycastDistance = 5.0f;
-    [SerializeField] private LayerMask interactableLayer; // Set in Unity Editor to define which objects are interactable
-    [SerializeField] private Text objectNameText; // Assign the Text component for displaying object names
+    [SerializeField] private LayerMask interactableLayer;
+    [SerializeField] private Text objectNameText;
 
-    [SerializeField] private InventoryManager inventoryManager; // Reference to the InventoryManager
+    [SerializeField] private InventoryManager inventoryManager;
 
-    // Start is called before the first frame update
-    void Start()
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
         objectNameText.enabled = false;
 
-        // Check if inventoryManager is assigned
         if (inventoryManager == null)
         {
             Debug.LogError("InventoryManager is not assigned in FirstPersonCam. Please assign it in the Inspector.");
         }
     }
 
-    // Update is called once per frame
     private void Update()
     {
+        HandleInventoryOpen();
+        HandlePotentiometerMenuOpen();
+        HandleMouseLook();
+        HandleRaycast();
+
+        if (Input.GetMouseButtonDown(1))
+        {
+            HandleRightClick();
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            HandleLeftClick();
+        }
+    }
+
+    private void HandleMouseLook()
+    {
         MouseX = Input.GetAxis("Mouse X") * sensX * Time.deltaTime;
-        Body.Rotate(Vector3.up, MouseX);
+        body.Rotate(Vector3.up, MouseX);
 
         MouseY = Input.GetAxis("Mouse Y") * sensY * Time.deltaTime;
-        Angle -= MouseY;
-        Angle = Mathf.Clamp(Angle, -30f, 80f);
-        Head.localRotation = Quaternion.Euler(Angle, 0, 0);
+        angle -= MouseY;
+        angle = Mathf.Clamp(angle, -30f, 80f);
+        head.localRotation = Quaternion.Euler(angle, 0, 0);
+    }
 
-        Ray ray = new Ray(Head.position, Head.forward);
-        // Picking objects
+    private void HandleRaycast()
+    {
+        Ray ray = new Ray(head.position, head.forward);
         RaycastHit hit;
-        bool cast = Physics.Raycast(Head.position, Head.forward, out hit, itemPickupDistance);
+        bool hitInteractable = Physics.Raycast(ray, out hit, raycastDistance, interactableLayer);
 
-        if (Physics.Raycast(ray, out hit, raycastDistance, interactableLayer))
+        if (hitInteractable)
         {
-            // Get the transform of the object hit by the raycast
-            Transform hitTransform = hit.transform;
-
-            // Get the object's name
-            string objectName = hitTransform.name;
-
-            // Get the parent object's name if it exists
-            string parentName = hitTransform.parent != null ? hitTransform.parent.name : null;
-
-            objectNameText.enabled = true;
-            objectNameText.text = parentName != null ? $"{objectName} ({parentName})" : objectName;
+            DisplayObjectName(hit.transform);
         }
         else
         {
-            // Hide the text if there's no raycast hit
             objectNameText.enabled = false;
         }
+    }
 
+    private void DisplayObjectName(Transform hitTransform)
+    {
+        string objectName = hitTransform.name;
+        string parentName = hitTransform.parent != null ? hitTransform.parent.name : null;
+
+        objectNameText.enabled = true;
+        objectNameText.text = parentName != null ? $"{objectName} ({parentName})" : objectName;
+    }
+
+    private void HandleInventoryOpen()
+    {
         if (InventoryManager.IsInventoryOpen)
         {
-            // Optionally, you might still want to show the cursor or update UI elements here
-            return; // Skip the rest of the update if the inventory is open
+            return;
+        }
+    }
+
+    private void HandlePotentiometerMenuOpen()
+    {
+        if (PotentiometerMenu.isMenuOpen)
+        {
+            return;
+        }
+    }    
+
+    private void HandleRightClick()
+    {
+        RaycastHit hit;
+        bool cast = Physics.Raycast(head.position, head.forward, out hit, itemPickupDistance);
+
+        if (attachedObject == null)
+        {
+            TryPickUpObject(hit, cast);
+        }
+        else
+        {
+            DropObject();
+        }
+    }
+
+    private void TryPickUpObject(RaycastHit hit, bool cast)
+    {
+        if (cast && hit.transform.CompareTag("pickable"))
+        {
+            attachedObject = hit.transform;
+            AttachObjectToHead();
+        }
+        else
+        {
+            TryDisconnectAndPickUp(hit);
+        }
+    }
+
+    private void TryDisconnectAndPickUp(RaycastHit hit)
+    {
+        PlugController plugController = hit.collider?.GetComponent<PlugController>();
+
+        if (plugController != null && plugController.isConnected)
+        {
+            Transform endAnchor = plugController.endAnchor;
+            plugController.Disconnect();
+            attachedObject = endAnchor;
+            AttachObjectToHead();
+        }
+    }
+
+    private void AttachObjectToHead()
+    {
+        attachedObject.SetParent(head);
+        attachedObject.localPosition = attachedObjectOffset;
+
+        Rigidbody attachedObjectRb = attachedObject.GetComponent<Rigidbody>();
+        if (attachedObjectRb != null)
+        {
+            attachedObjectRb.isKinematic = true;
         }
 
-        if (Input.GetMouseButtonDown(1)) // Right-click to pick up or drop objects
+        Collider attachedObjectCollider = attachedObject.GetComponent<Collider>();
+        if (attachedObjectCollider != null)
         {
-            if (attachedObject == null)
-            {
-                // Attempt to pick up or disconnect and pick up.
-                if (Physics.Raycast(Head.position, Head.forward, out hit, itemPickupDistance))
-                {
-                    PlugController plugController = hit.collider.GetComponent<PlugController>();
+            attachedObjectCollider.enabled = false;
+        }
+    }
 
-                    // Check if hitting a connected plug to disconnect and pick up.
-                    if (plugController != null && plugController.isConnected)
-                    {
-                        Debug.Log("Disconnecting and picking up the connected object.");
-                        Transform endAnchor = plugController.endAnchor;
+    private void DropObject()
+    {
+        attachedObject.SetParent(null);
 
-                        plugController.Disconnect();
-
-                        attachedObject = endAnchor;
-                        attachedObject.SetParent(Head);
-                        attachedObject.localPosition = new Vector3(0, -0.5f, 1);
-                        if (attachedObject.GetComponent<Rigidbody>() != null)
-                            attachedObject.GetComponent<Rigidbody>().isKinematic = true;
-                        if (attachedObject.GetComponent<Collider>() != null)
-                            attachedObject.GetComponent<Collider>().enabled = false;
-                    }
-                }
-            }
-            else
-            {
-                // Check to ensure we don't immediately drop what we just picked up.
-                // If there's an attached object, drop it.
-                Debug.Log("Dropping object.");
-                attachedObject.SetParent(null);
-                if (attachedObject.GetComponent<Rigidbody>() != null)
-                    attachedObject.GetComponent<Rigidbody>().isKinematic = false;
-                if (attachedObject.GetComponent<Collider>() != null)
-                    attachedObject.GetComponent<Collider>().enabled = true;
-
-                attachedObject = null;
-            }
-
-            if (attachedObject != null)
-            {
-                // Drop logic...
-                attachedObject.SetParent(null);
-                if (attachedObject.GetComponent<Rigidbody>() != null)
-                    attachedObject.GetComponent<Rigidbody>().isKinematic = false;
-                if (attachedObject.GetComponent<Collider>() != null)
-                    attachedObject.GetComponent<Collider>().enabled = true;
-
-                attachedObject = null;
-            }
-            else
-            {
-                // Pick up logic...
-                if (cast && hit.transform.CompareTag("pickable"))
-                {
-                    attachedObject = hit.transform;
-                    attachedObject.SetParent(Head); // Attach to Head instead of Body for better alignment
-
-                    // Set a specific local position that doesn't block the view/center.
-                    attachedObject.localPosition = attachedObjectOffset;
-
-                    // Pick up logic...
-                    if (attachedObject.GetComponent<Rigidbody>() != null)
-                        attachedObject.GetComponent<Rigidbody>().isKinematic = true;
-                    if (attachedObject.GetComponent<Collider>() != null)
-                        attachedObject.GetComponent<Collider>().enabled = false;
-                }
-            }
+        Rigidbody attachedObjectRb = attachedObject.GetComponent<Rigidbody>();
+        if (attachedObjectRb != null)
+        {
+            attachedObjectRb.isKinematic = false;
         }
 
-        // Left-click logic for connecting or using hotbar items
-        if (Input.GetMouseButtonDown(0))
+        Collider attachedObjectCollider = attachedObject.GetComponent<Collider>();
+        if (attachedObjectCollider != null)
         {
-            // Check if there's an attached object for connecting logic
-            if (attachedObject != null)
+            attachedObjectCollider.enabled = true;
+        }
+
+        attachedObject = null;
+    }
+
+    private void HandleLeftClick()
+    {
+        if (attachedObject != null)
+        {
+            TryConnectObject();
+        }
+        else
+        {
+            RaycastHit hit;
+            if (Physics.Raycast(head.position, head.forward, out hit, itemPickupDistance))
             {
-                Debug.Log("Left-click detected with an attached object.");
-
-                if (Physics.Raycast(Head.position, Head.forward, out hit, itemPickupDistance))
+                Potentiometer potentiometer = hit.collider.GetComponent<Potentiometer>();
+                if (potentiometer != null)
                 {
-                    Debug.Log("Raycast hit: " + hit.collider.name);
-
-                    PlugController plugController = hit.collider.GetComponent<PlugController>();
-                    if (plugController != null)
-                    {
-                        Debug.Log("PlugController found on " + hit.collider.name);
-
-                        if (attachedObject.CompareTag("pickable"))
-                        {
-                            Debug.Log("Attached object is tagged as pickable.");
-
-                            Rigidbody endAnchorRB = attachedObject.GetComponent<Rigidbody>();
-                            if (endAnchorRB != null)
-                            {
-                                Debug.Log("Rigidbody found on attached object. Attempting to connect.");
-                                plugController.Connect(attachedObject, endAnchorRB);
-                            }
-                            else
-                            {
-                                Debug.Log("No Rigidbody found on the pickable object.");
-                            }
-                        }
-                        else
-                        {
-                            Debug.Log("Attached object is not tagged as pickable.");
-                        }
-                    }
-                    else
-                    {
-                        Debug.Log("No PlugController found on hit object.");
-                    }
-                }
-                else
-                {
-                    Debug.Log("Raycast did not hit any object.");
+                    potentiometer.PotentiometerClick();
+                    return;
                 }
             }
-            else
+            UseSelectedHotbarItem();
+        }
+    }
+
+    private void TryConnectObject()
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(head.position, head.forward, out hit, itemPickupDistance))
+        {
+            PlugController plugController = hit.collider?.GetComponent<PlugController>();
+
+            if (plugController != null && attachedObject.CompareTag("pickable"))
             {
-                // Use the selected hotbar item if no object is attached
-                UseSelectedHotbarItem();
+                Rigidbody endAnchorRb = attachedObject.GetComponent<Rigidbody>();
+                if (endAnchorRb != null)
+                {
+                    plugController.Connect(attachedObject, endAnchorRb);
+                }
             }
         }
     }
@@ -221,66 +249,85 @@ public class FirstPersonCam : MonoBehaviour
         ItemClass selectedItem = inventoryManager.selectedItem;
         if (selectedItem != null && selectedItem.itemPrefab != null)
         {
-            // Instantiate the selected item's prefab
-            GameObject newObject = Instantiate(selectedItem.itemPrefab, GetSpawnPosition(), Quaternion.identity);
-            Debug.Log($"New object instantiated: {newObject.name}");
-
-            // Add the new object to NodeManager if it's a node or LED
-            Node newNode = newObject.GetComponent<Node>();
-            if (newNode != null)
-            {
-                if (!NodeManager.Nodes.Contains(newNode))
-                {
-                    NodeManager.AddNode(newNode);
-                    CircuitManager.Instance.nodes.Add(newNode);
-                    Debug.Log($"Node {newNode.name} added to the circuit.");
-                }
-            }
-
-            LED newLED = newObject.GetComponent<LED>();
-            if (newLED != null)
-            {
-                if (!CircuitManager.Instance.leds.Contains(newLED))
-                {
-                    CircuitManager.Instance.leds.Add(newLED);
-                    Debug.Log($"LED {newLED.name} added to the circuit.");
-
-                    if (newLED.GetPositiveTerminal() != null && newLED.GetNegativeTerminal() != null)
-                    {
-                        if (!NodeManager.Nodes.Contains(newLED.GetPositiveTerminal()))
-                        {
-                            NodeManager.AddNode(newLED.GetPositiveTerminal());
-                            CircuitManager.Instance.nodes.Add(newLED.GetPositiveTerminal());
-                            Debug.Log($"Positive terminal of {newLED.name} added to the circuit.");
-                        }
-                        if (!NodeManager.Nodes.Contains(newLED.GetNegativeTerminal()))
-                        {
-                            NodeManager.AddNode(newLED.GetNegativeTerminal());
-                            CircuitManager.Instance.nodes.Add(newLED.GetNegativeTerminal());
-                            Debug.Log($"Negative terminal of {newLED.name} added to the circuit.");
-                        }
-                        CircuitManager.Instance.AddConnection(newLED.GetPositiveTerminal(), newLED.GetNegativeTerminal());
-                    }
-                    else
-                    {
-                        Debug.LogError($"LED {newLED.name} terminals are not properly assigned.");
-                    }
-                }
-            }
-
-            // Update the circuit after adding new nodes and LEDs
-            CircuitManager.Instance.UpdateCircuit();
-            Debug.Log("Circuit updated.");
-        }
-        else
-        {
-            //Debug.LogError("Selected item or item prefab is null.");
+            InstantiateSelectedItem(selectedItem);
         }
     }
 
+    private void InstantiateSelectedItem(ItemClass selectedItem)
+    {
+        GameObject newObject = Instantiate(selectedItem.itemPrefab, GetSpawnPosition(), Quaternion.identity);
+        Debug.Log($"New object instantiated: {newObject.name}");
+
+        Node newNode = newObject.GetComponent<Node>();
+        if (newNode != null)
+        {
+            AddNodeToCircuit(newNode);
+        }
+
+        LED newLED = newObject.GetComponentInChildren<LED>();
+        if (newLED != null)
+        {
+            CircuitManager.Instance.AddLEDToCircuit(newLED);
+        }
+
+        Potentiometer newPotentiometer = newObject.GetComponent<Potentiometer>();
+        if (newPotentiometer != null)
+        {
+            CircuitManager.Instance.AddPotentiometer(newPotentiometer);
+        }
+
+        Battery newBattery = newObject.GetComponentInChildren<Battery>();
+        if (newBattery != null)
+        {
+            CircuitManager.Instance.AddBattery(newBattery);
+        }
+
+        CircuitManager.Instance.UpdateCircuit();
+        Debug.Log("Circuit updated.");
+    }
+
+    private void AddNodeToCircuit(Node newNode)
+    {
+        if (!NodeManager.Nodes.Contains(newNode))
+        {
+            NodeManager.AddNode(newNode);
+            CircuitManager.Instance.nodes.Add(newNode);
+            Debug.Log($"Node {newNode.name} added to the circuit.");
+        }
+    }
+
+    /*private void AddLEDToCircuit(LED newLED)
+    {
+        if (!CircuitManager.Instance.leds.Contains(newLED))
+        {
+            CircuitManager.Instance.leds.Add(newLED);
+            Debug.Log($"LED {newLED.name} added to the circuit.");
+
+            AddLEDTerminalsToCircuit(newLED);
+        }
+    }
+
+    private void AddLEDTerminalsToCircuit(LED newLED)
+    {
+        if (newLED.GetPositiveTerminal() != null && newLED.GetNegativeTerminal() != null)
+        {
+            AddNodeToCircuit(newLED.GetPositiveTerminal());
+            AddNodeToCircuit(newLED.GetNegativeTerminal());
+            CircuitManager.Instance.AddConnection(newLED.GetPositiveTerminal(), newLED.GetNegativeTerminal());
+        }
+        else
+        {
+            Debug.LogError($"LED {newLED.name} terminals are not properly assigned.");
+        }
+    }*/
+
     private Vector3 GetSpawnPosition()
     {
-        // This example just spawns the item in front of the player
-        return Head.position + Head.forward * 2.0f;
+        return head.position + head.forward * 2.0f;
+    }
+
+    public bool IsHoldingItem()
+    {
+        return attachedObject != null;
     }
 }

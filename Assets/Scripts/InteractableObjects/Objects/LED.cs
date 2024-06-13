@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 public class LED : MonoBehaviour
 {
@@ -8,21 +9,21 @@ public class LED : MonoBehaviour
     [SerializeField] private Node positiveTerminal; // Positive terminal of the LED
     [SerializeField] private Node negativeTerminal; // Negative terminal of the LED
 
-    public Node GetPositiveTerminal()
-    {
-        return positiveTerminal;
-    }
+    public UnityEvent OnIntensityChanged; // Event triggered when intensity changes
 
-    public Node GetNegativeTerminal()
-    {
-        return negativeTerminal;
-    }
+    public Node GetPositiveTerminal() => positiveTerminal;
+    public Node GetNegativeTerminal() => negativeTerminal;
 
     private void Awake()
     {
         SetupLightComponent();
         SetupTerminals();
         UpdateLightState();
+
+        if (OnIntensityChanged == null)
+        {
+            OnIntensityChanged = new UnityEvent();
+        }
     }
 
     private void Update()
@@ -80,7 +81,6 @@ public class LED : MonoBehaviour
             Debug.LogError($"Light component is missing in {gameObject.name}");
         }
     }
-
 
     private void SetupTerminals()
     {

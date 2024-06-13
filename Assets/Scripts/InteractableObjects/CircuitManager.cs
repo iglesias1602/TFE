@@ -15,8 +15,8 @@ public class CircuitManager : MonoBehaviour
     public List<Switch> switches = new List<Switch>(); // Manage all switches in the circuit
     public List<LED> leds = new List<LED>(); // Manage all LEDs in the circuit
     public List<Potentiometer> potentiometers = new List<Potentiometer>(); // Manage all potentiometers in the circuit
+    public List<Battery> batteries = new List<Battery>(); // Manage all batteries in the circuit
     public string circuitName; // Optional identifier for the circuit
-    public Battery battery; // Reference to the battery (if used)
 
     #endregion Variables
 
@@ -26,6 +26,7 @@ public class CircuitManager : MonoBehaviour
         InitializeEvents();
         InitializeLEDs();
         InitializePotentiometers();
+        InitializeBatteries();
         InitializeNodes();
     }
 
@@ -63,6 +64,11 @@ public class CircuitManager : MonoBehaviour
     private void InitializeLEDs()
     {
         leds = new List<LED>(FindObjectsOfType<LED>());
+        foreach (var led in leds)
+        {
+            led.OnIntensityChanged.AddListener(UpdateCircuit); // Listen for intensity changes
+        }
+
         // Debug.Log(leds.Count == 0 ? "No LEDs found in the scene." : $"{leds.Count} LEDs found and added to the list.");
     }
 
@@ -74,6 +80,17 @@ public class CircuitManager : MonoBehaviour
         foreach (var potentiometer in potentiometers)
         {
             potentiometer.OnResistanceChanged.AddListener(UpdateCircuit); // Listen for resistance changes
+        }
+    }
+
+    private void InitializeBatteries()
+    {
+        batteries = new List<Battery>(FindObjectsOfType<Battery>());
+        // Debug.Log(batteries.Count == 0 ? "No batteries found in the scene." : $"{batteries.Count} batteries found and added to the list.");
+
+        foreach (var battery in batteries)
+        {
+            AddBatteryToCircuit(battery);
         }
     }
 
@@ -104,25 +121,25 @@ public class CircuitManager : MonoBehaviour
 
     private void InitializeConnections()
     {
-        AddBatteryConnection();
+        AddBatteryConnections();
         AddLEDConnections();
         AddSwitchConnections();
+        AddPotentiometerConnections();
     }
 
     #region Adding connections
-    private void AddBatteryConnection()
+    private void AddBatteryConnections()
     {
-        if (battery != null && battery.positiveTerminal != null && battery.negativeTerminal != null)
+        foreach (Battery battery in batteries)
         {
-            AddConnection(battery.positiveTerminal, battery.negativeTerminal);
+            AddBatteryToCircuit(battery);
         }
     }
 
     private void AddLEDConnections()
     {
         // Create a copy of the list to avoid modifying the collection while iterating
-        var ledsCopy = new List<LED>(leds);
-        foreach (LED led in ledsCopy)
+        foreach (LED led in leds)
         {
             AddLEDToCircuit(led);
         }
@@ -136,6 +153,14 @@ public class CircuitManager : MonoBehaviour
             {
                 AddConnection(sw.node1, sw.node2);
             }
+        }
+    }
+
+    private void AddPotentiometerConnections()
+    {
+        foreach (Potentiometer potentiometer in potentiometers)
+        {
+            AddPotentiometerToCircuit(potentiometer);
         }
     }
     #endregion Adding connections
@@ -153,13 +178,76 @@ public class CircuitManager : MonoBehaviour
 
     public void AddLEDToCircuit(LED led)
     {
+        if (!leds.Contains(led))
+        {
+            leds.Add(led);
+            led.OnIntensityChanged.AddListener(UpdateCircuit);
+        }
+
         if (led.GetPositiveTerminal() != null && led.GetNegativeTerminal() != null)
         {
             AddConnection(led.GetPositiveTerminal(), led.GetNegativeTerminal());
-            nodes.Add(led.GetPositiveTerminal());
-            nodes.Add(led.GetNegativeTerminal());
-            leds.Add(led);
+            if (!nodes.Contains(led.GetPositiveTerminal())) nodes.Add(led.GetPositiveTerminal());
+            if (!nodes.Contains(led.GetNegativeTerminal())) nodes.Add(led.GetNegativeTerminal());
             OnCircuitUpdated.Invoke();
+        }
+    }
+
+    public void RemoveLEDFromCircuit(LED led)
+    {
+        if (leds.Contains(led))
+        {
+            leds.Remove(led);
+            led.OnIntensityChanged.RemoveListener(UpdateCircuit);
+        }
+    }
+
+    // Method to add a new potentiometer
+    public void AddPotentiometer(Potentiometer potentiometer)
+    {
+        if (!potentiometers.Contains(potentiometer))
+        {
+            potentiometers.Add(potentiometer);
+            potentiometer.OnResistanceChanged.AddListener(UpdateCircuit); // Listen for resistance changes
+            AddPotentiometerToCircuit(potentiometer);
+            OnCircuitUpdated.Invoke();
+        }
+    }
+
+    private void AddPotentiometerToCircuit(Potentiometer potentiometer)
+    {
+        if (potentiometer.GetPositiveTerminal() != null && potentiometer.GetVariableTerminal() != null)
+        {
+            AddConnection(potentiometer.GetPositiveTerminal(), potentiometer.GetVariableTerminal());
+            if (!nodes.Contains(potentiometer.GetPositiveTerminal())) nodes.Add(potentiometer.GetPositiveTerminal());
+            if (!nodes.Contains(potentiometer.GetVariableTerminal())) nodes.Add(potentiometer.GetVariableTerminal());
+        }
+        if (potentiometer.GetPositiveTerminal() != null && potentiometer.GetMaxTerminal() != null)
+        {
+            AddConnection(potentiometer.GetPositiveTerminal(), potentiometer.GetMaxTerminal());
+            if (!nodes.Contains(potentiometer.GetPositiveTerminal())) nodes.Add(potentiometer.GetPositiveTerminal());
+            if (!nodes.Contains(potentiometer.GetMaxTerminal())) nodes.Add(potentiometer.GetMaxTerminal());
+        }
+    }
+
+    // Method to add a new battery
+    public void AddBattery(Battery battery)
+    {
+        if (!batteries.Contains(battery))
+        {
+            batteries.Add(battery);
+            AddBatteryToCircuit(battery);
+            OnCircuitUpdated.Invoke();
+        }
+    }
+
+    private void AddBatteryToCircuit(Battery battery)
+    {
+        if (battery.positiveTerminal != null && battery.negativeTerminal != null)
+        {
+            AddConnection(battery.positiveTerminal, battery.negativeTerminal);
+            if (!nodes.Contains(battery.positiveTerminal)) nodes.Add(battery.positiveTerminal);
+            if (!nodes.Contains(battery.negativeTerminal)) nodes.Add(battery.negativeTerminal);
         }
     }
 
@@ -270,7 +358,7 @@ public class CircuitManager : MonoBehaviour
     private float CalculateLEDIntensity(float resistance)
     {
 
-        float batteryVoltage = battery != null ? battery.GetVoltage() : 9f;
+        float batteryVoltage = batteries.Count > 0 ? batteries[0].GetVoltage() : 9f;
 
         // Calculate the current using Ohm's Law: I = V / R
         float current = batteryVoltage / resistance;

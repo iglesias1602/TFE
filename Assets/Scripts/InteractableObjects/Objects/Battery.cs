@@ -9,7 +9,7 @@ public class Battery : MonoBehaviour
     public List<Node> connections;
     public float voltage = 9f; // Default voltage of the battery
 
-    void Start()
+    void Awake()
     {
         connections = new List<Node>(GetComponentsInChildren<Node>());
         foreach (var node in connections)

@@ -205,13 +205,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4165643397636658550}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.31391543, y: -0, z: -0, w: 0.949451}
-  m_LocalPosition: {x: 0.001, y: 0.098, z: 0.01}
+  m_LocalRotation: {x: -0.84484726, y: -0, z: -0, w: 0.5350076}
+  m_LocalPosition: {x: -0.001, y: 0.519, z: -0.005}
   m_LocalScale: {x: 0.35714287, y: 0.35714275, z: 0.35714275}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4269514262439561170}
-  m_LocalEulerAnglesHint: {x: -36.591, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -115.311, y: 0, z: 0}
 --- !u!108 &2519994955786312963
 Light:
   m_ObjectHideFlags: 0
@@ -310,10 +310,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pointLight: {fileID: 2519994955786312963}
-  defaultIntensity: 4
+  defaultIntensity: 59
   isOn: 0
   positiveTerminal: {fileID: 761653282280490553}
   negativeTerminal: {fileID: 6292999702970226966}
+  OnIntensityChanged:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &9039183450288650313
 GameObject:
   m_ObjectHideFlags: 0

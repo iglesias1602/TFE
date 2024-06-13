@@ -13,6 +13,8 @@ public class Potentiometer : MonoBehaviour
 
     public UnityEvent OnResistanceChanged; // Event triggered when resistance changes
 
+    private PotentiometerMenu potentiometerMenu;
+
     private NodeConnection connectionAB;
     private NodeConnection connectionAC;
     public float Resistance
@@ -22,7 +24,7 @@ public class Potentiometer : MonoBehaviour
         {
             if (resistance != value)
             {
-                resistance = Mathf.Clamp(value, 1f, 10000f); // Assuming 100 is the max resistance
+                resistance = Mathf.Clamp(value, 1f, 10000f); // Assuming 10000 is the max resistance
                 OnResistanceChanged.Invoke(); // Trigger the event when resistance 
             }
         }
@@ -49,6 +51,11 @@ public class Potentiometer : MonoBehaviour
             OnResistanceChanged = new UnityEvent();
         }
 
+        if (potentiometerMenu == null)
+        {
+            potentiometerMenu = FindObjectOfType<PotentiometerMenu>();
+        }
+
     }
 
     private void OnValidate()
@@ -65,7 +72,14 @@ public class Potentiometer : MonoBehaviour
             OnResistanceChanged.Invoke();
         }
     }
-    
+
+    public void PotentiometerClick()
+    {
+        if (!Camera.main.GetComponent<FirstPersonCam>().IsHoldingItem() && potentiometerMenu != null)
+        {
+            potentiometerMenu.OpenMenu(this);
+        }
+    }
 
     #region Setup Terminal
     private void SetupTerminals()
