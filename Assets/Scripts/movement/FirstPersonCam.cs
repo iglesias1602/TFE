@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI; // Use TMPro for TextMeshPro
+using UnityEngine.UI;
 
 public class FirstPersonCam : MonoBehaviour
 {
@@ -18,7 +18,7 @@ public class FirstPersonCam : MonoBehaviour
 
     public float itemPickupDistance;
     Transform attachedObject = null;
-    float attachedDistance = 0f;
+    //float attachedDistance = 0f;
 
     [SerializeField] private Vector3 attachedObjectOffset = new Vector3(0, -0.5f, 1);
 
@@ -26,13 +26,19 @@ public class FirstPersonCam : MonoBehaviour
     [SerializeField] private LayerMask interactableLayer; // Set in Unity Editor to define which objects are interactable
     [SerializeField] private Text objectNameText; // Assign the Text component for displaying object names
 
+    [SerializeField] private InventoryManager inventoryManager; // Reference to the InventoryManager
 
     // Start is called before the first frame update
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
-
         objectNameText.enabled = false;
+
+        // Check if inventoryManager is assigned
+        if (inventoryManager == null)
+        {
+            Debug.LogError("InventoryManager is not assigned in FirstPersonCam. Please assign it in the Inspector.");
+        }
     }
 
     // Update is called once per frame
@@ -63,15 +69,7 @@ public class FirstPersonCam : MonoBehaviour
             string parentName = hitTransform.parent != null ? hitTransform.parent.name : null;
 
             objectNameText.enabled = true;
-
-            if (parentName != null)
-            {
-                objectNameText.text = $"{objectName} ({parentName})"; // Display the name and parent name in parentheses
-            }
-            else
-            {
-                objectNameText.text = objectName; // Display only the object name if no parent exists
-            }
+            objectNameText.text = parentName != null ? $"{objectName} ({parentName})" : objectName;
         }
         else
         {
@@ -84,7 +82,6 @@ public class FirstPersonCam : MonoBehaviour
             // Optionally, you might still want to show the cursor or update UI elements here
             return; // Skip the rest of the update if the inventory is open
         }
-
 
         if (Input.GetMouseButtonDown(1)) // Right-click to pick up or drop objects
         {
@@ -158,49 +155,132 @@ public class FirstPersonCam : MonoBehaviour
             }
         }
 
-        // Left-click logic for connecting
-        if (Input.GetMouseButtonDown(0) && attachedObject != null)
+        // Left-click logic for connecting or using hotbar items
+        if (Input.GetMouseButtonDown(0))
         {
-            Debug.Log("Left-click detected with an attached object.");
-
-            if (Physics.Raycast(Head.position, Head.forward, out hit, itemPickupDistance))
+            // Check if there's an attached object for connecting logic
+            if (attachedObject != null)
             {
-                Debug.Log("Raycast hit: " + hit.collider.name);
+                Debug.Log("Left-click detected with an attached object.");
 
-                PlugController plugController = hit.collider.GetComponent<PlugController>();
-                if (plugController != null)
+                if (Physics.Raycast(Head.position, Head.forward, out hit, itemPickupDistance))
                 {
-                    Debug.Log("PlugController found on " + hit.collider.name);
+                    Debug.Log("Raycast hit: " + hit.collider.name);
 
-                    if (attachedObject.CompareTag("pickable"))
+                    PlugController plugController = hit.collider.GetComponent<PlugController>();
+                    if (plugController != null)
                     {
-                        Debug.Log("Attached object is tagged as EndAnchor.");
+                        Debug.Log("PlugController found on " + hit.collider.name);
 
-                        Rigidbody endAnchorRB = attachedObject.GetComponent<Rigidbody>();
-                        if (endAnchorRB != null)
+                        if (attachedObject.CompareTag("pickable"))
                         {
-                            Debug.Log("Rigidbody found on attached object. Attempting to connect.");
-                            plugController.Connect(attachedObject, endAnchorRB);
+                            Debug.Log("Attached object is tagged as pickable.");
+
+                            Rigidbody endAnchorRB = attachedObject.GetComponent<Rigidbody>();
+                            if (endAnchorRB != null)
+                            {
+                                Debug.Log("Rigidbody found on attached object. Attempting to connect.");
+                                plugController.Connect(attachedObject, endAnchorRB);
+                            }
+                            else
+                            {
+                                Debug.Log("No Rigidbody found on the pickable object.");
+                            }
                         }
                         else
                         {
-                            Debug.Log("No Rigidbody found on the EndAnchor object.");
+                            Debug.Log("Attached object is not tagged as pickable.");
                         }
                     }
                     else
                     {
-                        Debug.Log("Attached object is not tagged as pickable.");
+                        Debug.Log("No PlugController found on hit object.");
                     }
                 }
                 else
                 {
-                    Debug.Log("No PlugController found on hit object.");
+                    Debug.Log("Raycast did not hit any object.");
                 }
             }
             else
             {
-                Debug.Log("Raycast did not hit any object.");
+                // Use the selected hotbar item if no object is attached
+                UseSelectedHotbarItem();
             }
         }
+    }
+
+    private void UseSelectedHotbarItem()
+    {
+        if (inventoryManager == null)
+        {
+            Debug.LogError("InventoryManager is not assigned.");
+            return;
+        }
+
+        ItemClass selectedItem = inventoryManager.selectedItem;
+        if (selectedItem != null && selectedItem.itemPrefab != null)
+        {
+            // Instantiate the selected item's prefab
+            GameObject newObject = Instantiate(selectedItem.itemPrefab, GetSpawnPosition(), Quaternion.identity);
+            Debug.Log($"New object instantiated: {newObject.name}");
+
+            // Add the new object to NodeManager if it's a node or LED
+            Node newNode = newObject.GetComponent<Node>();
+            if (newNode != null)
+            {
+                if (!NodeManager.Nodes.Contains(newNode))
+                {
+                    NodeManager.AddNode(newNode);
+                    CircuitManager.Instance.nodes.Add(newNode);
+                    Debug.Log($"Node {newNode.name} added to the circuit.");
+                }
+            }
+
+            LED newLED = newObject.GetComponent<LED>();
+            if (newLED != null)
+            {
+                if (!CircuitManager.Instance.leds.Contains(newLED))
+                {
+                    CircuitManager.Instance.leds.Add(newLED);
+                    Debug.Log($"LED {newLED.name} added to the circuit.");
+
+                    if (newLED.GetPositiveTerminal() != null && newLED.GetNegativeTerminal() != null)
+                    {
+                        if (!NodeManager.Nodes.Contains(newLED.GetPositiveTerminal()))
+                        {
+                            NodeManager.AddNode(newLED.GetPositiveTerminal());
+                            CircuitManager.Instance.nodes.Add(newLED.GetPositiveTerminal());
+                            Debug.Log($"Positive terminal of {newLED.name} added to the circuit.");
+                        }
+                        if (!NodeManager.Nodes.Contains(newLED.GetNegativeTerminal()))
+                        {
+                            NodeManager.AddNode(newLED.GetNegativeTerminal());
+                            CircuitManager.Instance.nodes.Add(newLED.GetNegativeTerminal());
+                            Debug.Log($"Negative terminal of {newLED.name} added to the circuit.");
+                        }
+                        CircuitManager.Instance.AddConnection(newLED.GetPositiveTerminal(), newLED.GetNegativeTerminal());
+                    }
+                    else
+                    {
+                        Debug.LogError($"LED {newLED.name} terminals are not properly assigned.");
+                    }
+                }
+            }
+
+            // Update the circuit after adding new nodes and LEDs
+            CircuitManager.Instance.UpdateCircuit();
+            Debug.Log("Circuit updated.");
+        }
+        else
+        {
+            //Debug.LogError("Selected item or item prefab is null.");
+        }
+    }
+
+    private Vector3 GetSpawnPosition()
+    {
+        // This example just spawns the item in front of the player
+        return Head.position + Head.forward * 2.0f;
     }
 }

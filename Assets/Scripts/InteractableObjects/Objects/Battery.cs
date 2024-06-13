@@ -7,6 +7,7 @@ public class Battery : MonoBehaviour
     public Node positiveTerminal;
     public Node negativeTerminal;
     public List<Node> connections;
+    public float voltage = 9f; // Default voltage of the battery
 
     void Start()
     {
@@ -19,11 +20,11 @@ public class Battery : MonoBehaviour
         if (positiveTerminal != null && negativeTerminal != null)
         {
             positiveTerminal.AddConnection(negativeTerminal);
-            Debug.Log("Battery terminals connected: Positive to Negative");
+            // Debug.Log("Battery terminals connected: Positive to Negative");
         }
         else
         {
-            Debug.LogError("Battery terminals are not assigned.");
+            // Debug.LogError("Battery terminals are not assigned.");
         }
     }
 
@@ -31,5 +32,9 @@ public class Battery : MonoBehaviour
     {
         // Implement connection logic if needed
         return connections.Contains(target);
+    }
+    public float GetVoltage()
+    {
+        return voltage;
     }
 }

@@ -12,7 +12,6 @@ GameObject:
   - component: {fileID: 932112136017250423}
   - component: {fileID: 3101696212113521853}
   - component: {fileID: 3706224156528251689}
-  - component: {fileID: 5288199028062772226}
   m_Layer: 0
   m_Name: Led A
   m_TagString: Untagged
@@ -30,7 +29,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2.8, y: 2.8, z: 2.8}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2836632672216820528}
@@ -110,23 +109,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 602240397915004217, guid: bc792507c7a5409a926a545b8c0a6a29, type: 3}
---- !u!114 &5288199028062772226
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3462014899077307752}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c19f4f53f37e5f04a9a3c46ee6c91ef5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pointLight: {fileID: 2519994955786312963}
-  defaultIntensity: 4
-  isOn: 0
-  positiveTerminal: {fileID: 761653282280490553}
-  negativeTerminal: {fileID: 6292999702970226966}
 --- !u!1 &4081931802170981734
 GameObject:
   m_ObjectHideFlags: 0
@@ -207,6 +189,7 @@ GameObject:
   - component: {fileID: 2836632672216820528}
   - component: {fileID: 2519994955786312963}
   - component: {fileID: 4976279824956290584}
+  - component: {fileID: 6678119950504406084}
   m_Layer: 0
   m_Name: Point Light
   m_TagString: Untagged
@@ -222,13 +205,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4165643397636658550}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.67543477, y: -0, z: -0, w: 0.73741984}
-  m_LocalPosition: {x: 0.001, y: 0.697, z: 0.01}
+  m_LocalRotation: {x: -0.31391543, y: -0, z: -0, w: 0.949451}
+  m_LocalPosition: {x: 0.001, y: 0.098, z: 0.01}
   m_LocalScale: {x: 0.35714287, y: 0.35714275, z: 0.35714275}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4269514262439561170}
-  m_LocalEulerAnglesHint: {x: -7.098, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -36.591, y: 0, z: 0}
 --- !u!108 &2519994955786312963
 Light:
   m_ObjectHideFlags: 0
@@ -236,13 +219,13 @@ Light:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4165643397636658550}
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 10
   m_Type: 2
   m_Shape: 0
-  m_Color: {r: 0.98490566, g: 0, b: 0, a: 1}
-  m_Intensity: 2
-  m_Range: 10
+  m_Color: {r: 0.7509433, g: 0.0155855995, b: 0.0155855995, a: 1}
+  m_Intensity: 59.3
+  m_Range: 1.8
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
   m_CookieSize: 10
@@ -275,7 +258,7 @@ Light:
   m_Cookie: {fileID: 0}
   m_DrawHalo: 0
   m_Flare: {fileID: 0}
-  m_RenderMode: 0
+  m_RenderMode: 1
   m_CullingMask:
     serializedVersion: 2
     m_Bits: 4294967295
@@ -314,6 +297,23 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
+--- !u!114 &6678119950504406084
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4165643397636658550}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c19f4f53f37e5f04a9a3c46ee6c91ef5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pointLight: {fileID: 2519994955786312963}
+  defaultIntensity: 4
+  isOn: 0
+  positiveTerminal: {fileID: 761653282280490553}
+  negativeTerminal: {fileID: 6292999702970226966}
 --- !u!1 &9039183450288650313
 GameObject:
   m_ObjectHideFlags: 0

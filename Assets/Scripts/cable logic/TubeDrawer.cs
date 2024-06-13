@@ -13,16 +13,15 @@ public class TubeDrawer3D : MonoBehaviour
     private GameObject currentTubeObject;
     private TubeRenderer currentTubeRenderer;
     private Vector3 startPoint;
-    private ToolClass currentCableTool = null; // Track the currently selected cable tool
-
+    //private ToolClass currentCableTool = null; // Track the currently selected cable tool
 
     private Vector3 lastEndPoint;
-
 
     void Start()
     {
         mainCamera = Camera.main;
     }
+
     void Update()
     {
         ToolClass tool = inventoryManager.selectedItem as ToolClass;
@@ -89,8 +88,6 @@ public class TubeDrawer3D : MonoBehaviour
         }
     }
 
-
-
     void StartDrawing(string toolName)
     {
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
@@ -127,7 +124,6 @@ public class TubeDrawer3D : MonoBehaviour
             Vector3 endPoint = hit.point;
             GameObject hitObject = hit.collider.gameObject; // Capture the hit object
 
-
             if (currentTubeRenderer != null && !isSettingStartPoint) // Valid end position on an interactable object
             {
                 Cable cableComponent = currentTubeObject.GetComponent<Cable>();
@@ -141,15 +137,13 @@ public class TubeDrawer3D : MonoBehaviour
                     }
                     cableComponent.endTerminal = endNode; // Now set the end object reference
 
-                    currentTubeRenderer.SetPositions(new Vector3[] { startPoint, endPoint });
+                    Vector3[] positions = Calculate90DegreePath(startPoint, endPoint);
+                    currentTubeRenderer.SetPositions(positions);
                     FinalizeDrawing();
                 }
-
-                
             }
         }
     }
-
 
     void CreateTubeObject(string toolName, Vector3 position, GameObject startObject)
     {
@@ -191,18 +185,17 @@ public class TubeDrawer3D : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, Mathf.Infinity, layerMask))
         {
-
-                // Update the preview endpoint to the hit point
-                Vector3 previewEndPoint = hit.point;
-                if (currentTubeRenderer != null)
-                {
-                    currentTubeRenderer.SetPositions(new Vector3[] { startPoint, previewEndPoint });
-                }
+            // Update the preview endpoint to the hit point
+            Vector3 previewEndPoint = hit.point;
+            if (currentTubeRenderer != null)
+            {
+                Vector3[] positions = Calculate90DegreePath(startPoint, previewEndPoint);
+                currentTubeRenderer.SetPositions(positions);
+            }
         }
         else
         {
             Debug.Log("Raycast did not hit any object on the specified layers.");
-
         }
 
         // Debug visual
@@ -244,7 +237,6 @@ public class TubeDrawer3D : MonoBehaviour
             {
                 CircuitManager.Instance.RemoveConnection(cableComponent.startTerminal, cableComponent.endTerminal);
                 CircuitManager.Instance.OnConnectionRemoved?.Invoke(); // Trigger event for connection removal
-
             }
 
             Destroy(currentTubeObject); // Remove the incomplete tube
@@ -259,7 +251,7 @@ public class TubeDrawer3D : MonoBehaviour
         isSettingStartPoint = true;
         currentTubeRenderer = null;
         currentTubeObject = null;
-        currentCableTool = null;
+        //currentCableTool = null;
     }
 
     void SetMaterialBasedOnToolName(string toolName)
@@ -268,6 +260,14 @@ public class TubeDrawer3D : MonoBehaviour
 
         Material selectedMaterial = toolName.Contains("black") ? blackCableMaterial : redCableMaterial;
         currentTubeRenderer.material = selectedMaterial;
+    }
+
+    Vector3[] Calculate90DegreePath(Vector3 start, Vector3 end)
+    {
+        Vector3 midPoint1 = new Vector3(start.x, start.y, end.z);
+        Vector3 midPoint2 = new Vector3(end.x, start.y, end.z);
+
+        return new Vector3[] { start, midPoint1, midPoint2, end };
     }
 
     void TryDeleteCable()

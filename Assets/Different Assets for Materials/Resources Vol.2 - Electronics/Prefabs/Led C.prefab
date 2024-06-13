@@ -80,7 +80,7 @@ GameObject:
   - component: {fileID: 7791882572906247601}
   - component: {fileID: 6337752280578930592}
   - component: {fileID: 3465397333161682061}
-  - component: {fileID: 7958647023122782228}
+  - component: {fileID: 1288816517964631221}
   m_Layer: 0
   m_Name: Point Light
   m_TagString: Untagged
@@ -188,7 +188,7 @@ MonoBehaviour:
   m_LightCookieSize: {x: 1, y: 1}
   m_LightCookieOffset: {x: 0, y: 0}
   m_SoftShadowQuality: 0
---- !u!114 &7958647023122782228
+--- !u!114 &1288816517964631221
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -200,11 +200,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c19f4f53f37e5f04a9a3c46ee6c91ef5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  pointLight: {fileID: 0}
+  pointLight: {fileID: 6337752280578930592}
   defaultIntensity: 4
   isOn: 0
-  positiveTerminal: {fileID: 0}
-  negativeTerminal: {fileID: 0}
+  positiveTerminal: {fileID: 7233823556399001921}
+  negativeTerminal: {fileID: 2345428760457252075}
 --- !u!1 &3462014899077307752
 GameObject:
   m_ObjectHideFlags: 0
@@ -217,7 +217,6 @@ GameObject:
   - component: {fileID: 932112136017250423}
   - component: {fileID: 3101696212113521853}
   - component: {fileID: 3706224156528251689}
-  - component: {fileID: 2182649770176026371}
   m_Layer: 0
   m_Name: Led C
   m_TagString: Untagged
@@ -315,23 +314,6 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 602240397915004217, guid: bc792507c7a5409a926a545b8c0a6a29, type: 3}
---- !u!114 &2182649770176026371
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3462014899077307752}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c19f4f53f37e5f04a9a3c46ee6c91ef5, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pointLight: {fileID: 6337752280578930592}
-  defaultIntensity: 4
-  isOn: 0
-  positiveTerminal: {fileID: 7233823556399001921}
-  negativeTerminal: {fileID: 2345428760457252075}
 --- !u!1 &6672034836468121471
 GameObject:
   m_ObjectHideFlags: 0
