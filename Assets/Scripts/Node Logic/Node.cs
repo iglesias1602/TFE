@@ -19,7 +19,7 @@ public class Node : MonoBehaviour
         {
             ConnectedNodes.Add(node);
             node.ConnectedNodes.Add(this); // Ensure bi-directional connection
-            Debug.Log($"Connection added between {this.NodeName} and {node.NodeName}");
+            //Debug.Log($"Connection added between {this.NodeName} and {node.NodeName}");
         }
     }
 

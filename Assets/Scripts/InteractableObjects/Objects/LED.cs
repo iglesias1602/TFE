@@ -87,7 +87,7 @@ public class LED : MonoBehaviour
         if (positiveTerminal != null && negativeTerminal != null)
         {
             positiveTerminal.AddConnection(negativeTerminal);
-            Debug.Log($"LED {gameObject.name} terminals connected: Positive to Negative");
+            //Debug.Log($"LED {gameObject.name} terminals connected: Positive to Negative");
         }
         else
         {

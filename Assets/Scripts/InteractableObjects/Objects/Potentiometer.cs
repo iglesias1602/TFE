@@ -85,7 +85,7 @@ public class Potentiometer : MonoBehaviour
         if (positiveTerminal != null && variableTerminal != null)
         {
             positiveTerminal.AddConnection(variableTerminal);
-            Debug.Log($"LED {gameObject.name} terminals connected: Positive to variable");
+            //Debug.Log($"LED {gameObject.name} terminals connected: Positive to variable");
         }
         else
         {
@@ -95,7 +95,7 @@ public class Potentiometer : MonoBehaviour
         if (positiveTerminal != null && maxResistanceTerminal != null)
         {
             positiveTerminal.AddConnection(maxResistanceTerminal);
-            Debug.Log($"LED {gameObject.name} terminals connected: Positive to MAX resistance");
+            //Debug.Log($"LED {gameObject.name} terminals connected: Positive to MAX resistance");
         }
         else
         {

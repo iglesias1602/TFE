@@ -11,22 +11,29 @@ public class Battery : MonoBehaviour
 
     private void Start()
     {
+        InitializeBattery();
+    }
+
+    public void InitializeBattery()
+    {
         connections = new List<Node>(GetComponentsInChildren<Node>());
         foreach (var node in connections)
         {
             node.IsPowered = true; // Set connected nodes as powered
+            //Debug.Log($"Battery initialization: Node {node.name} is powered: {node.IsPowered}");
         }
 
         if (positiveTerminal != null && negativeTerminal != null)
         {
             positiveTerminal.AddConnection(negativeTerminal);
-            // Debug.Log("Battery terminals connected: Positive to Negative");
+            //Debug.Log("Battery terminals connected: Positive to Negative");
         }
         else
         {
-            // Debug.LogError("Battery terminals are not assigned.");
+            Debug.LogError("Battery terminals are not assigned.");
         }
     }
+
 
     public bool IsConnected(Node target)
     {

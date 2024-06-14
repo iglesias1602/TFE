@@ -213,7 +213,7 @@ public class TubeDrawer3D : MonoBehaviour
                 // Now that we have both terminals, we can add the connection
                 CircuitManager.Instance.AddConnection(cableComponent.startTerminal, cableComponent.endTerminal);
                 CircuitManager.Instance.OnNewConnection?.Invoke();
-                Debug.Log($"Finalized drawing tube between {cableComponent.startTerminal.NodeName} and {cableComponent.endTerminal.NodeName}");
+                //Debug.Log($"Finalized drawing tube between {cableComponent.startTerminal.NodeName} and {cableComponent.endTerminal.NodeName}");
             }
             else
             {

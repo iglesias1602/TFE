@@ -250,7 +250,7 @@ public class FirstPersonCam : MonoBehaviour
     private void InstantiateSelectedItem(ItemClass selectedItem)
     {
         GameObject newObject = Instantiate(selectedItem.itemPrefab, GetSpawnPosition(), Quaternion.identity);
-        Debug.Log($"New object instantiated: {newObject.name}");
+        //Debug.Log($"New object instantiated: {newObject.name}");
 
         Node newNode = newObject.GetComponent<Node>();
         if (newNode != null)

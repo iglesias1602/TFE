@@ -45,7 +45,7 @@ public class Switch : MonoBehaviour
         }
 
         // Log the current connections of node1 and node2 for debugging
-        Debug.Log($"Node {node1.NodeName} connections: {string.Join(", ", node1.ConnectedNodes)}");
-        Debug.Log($"Node {node2.NodeName} connections: {string.Join(", ", node2.ConnectedNodes)}");
+        //Debug.Log($"Node {node1.NodeName} connections: {string.Join(", ", node1.ConnectedNodes)}");
+        //Debug.Log($"Node {node2.NodeName} connections: {string.Join(", ", node2.ConnectedNodes)}");
     }
 }

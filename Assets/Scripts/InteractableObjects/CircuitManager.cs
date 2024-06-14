@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine.Events;
+using System.Linq;
 
 public class CircuitManager : MonoBehaviour
 {
@@ -256,7 +257,7 @@ public class CircuitManager : MonoBehaviour
                 {
                     nodes.Add(node);
                 }
-                node.IsPowered = true;
+                node.IsPowered = true; // Ensure nodes are marked as powered
             }
         }
         OnCircuitUpdated.Invoke();
@@ -327,83 +328,190 @@ public class CircuitManager : MonoBehaviour
     // Update the circuit based on the current connections
     public void UpdateCircuit()
     {
-        if (IsCircuitClosed())
+        var loops = IdentifyIndependentLoops();
+        var batteryGroups = GroupNodesByBattery();
+
+        foreach (var loop in loops)
         {
-            foreach (var led in leds)
+            bool isLoopClosed = false;
+
+            foreach (var batteryGroup in batteryGroups)
             {
-                if (led != null && IsPartOfClosedLoop(led.GetPositiveTerminal(), led.GetNegativeTerminal()))
+                if (batteryGroup.Intersect(loop).Any() && IsCircuitClosed(loop))
                 {
+                    isLoopClosed = true;
+                    break;
+                }
+            }
 
-                    // Find the corresponding potentiometer and adjust LED intensity
-                    foreach (var potentiometer in potentiometers)
-                    {
-                        if (IsPartOfClosedLoop(potentiometer.GetPositiveTerminal(), potentiometer.GetVariableTerminal()))
-                        {
-                            float intensity = CalculateLEDIntensity(potentiometer.Resistance);
-                            led.SetDefaultIntensity(intensity); // Adjust LED default intensity based on potentiometer resistance
-                        }
-                        else if (IsPartOfClosedLoop(potentiometer.GetPositiveTerminal(), potentiometer.GetMaxTerminal()))
-                        {
-                            float intensity = CalculateLEDIntensity(potentiometer.FixedResistance);
-                            led.SetDefaultIntensity(intensity); // Adjust LED default intensity based on potentiometer resistance
-                        }
-                    }
+            UpdateLEDsInLoop(loop, isLoopClosed);
+        }
 
+        OnCircuitUpdated?.Invoke();
+    }
+
+    private void UpdateLEDsInLoop(HashSet<Node> loop, bool isLoopClosed)
+    {
+        foreach (var led in leds)
+        {
+            if (led != null && loop.Contains(led.GetPositiveTerminal()) && loop.Contains(led.GetNegativeTerminal()))
+            {
+                if (isLoopClosed)
+                {
+                    float intensity = CalculateLoopIntensity(loop, led);
+                    led.SetDefaultIntensity(intensity);
                     led.TurnOn();
-
                 }
                 else
                 {
-                    led.TurnOff(); // Turn off LEDs that are not in a closed loop
+                    led.TurnOff();
                 }
             }
         }
-        else // If the circuit is open, turn off LEDs
-        {
-            TurnOffLEDs();
-        }
-
-        OnCircuitUpdated?.Invoke(); // Invoke the circuit update event (if any)
     }
 
-    private float CalculateLEDIntensity(float resistance)
+    private float CalculateLoopIntensity(HashSet<Node> loop, LED led)
     {
-
         float batteryVoltage = 0f;
+        float totalResistance = 0f;
+
+        // Sum up the battery voltages in this loop
         foreach (var battery in batteries)
         {
-            batteryVoltage += battery.GetVoltage();
+            if (loop.Contains(battery.positiveTerminal) && loop.Contains(battery.negativeTerminal))
+            {
+                batteryVoltage += battery.GetVoltage();
+            }
         }
-        // Calculate the current using Ohm's Law: I = V / R
-        float current = batteryVoltage / resistance;
 
-        // The power delivered to the LED: P = V * I
-        float power = batteryVoltage * current;
+        // Calculate the total resistance from potentiometers in series
+        foreach (var potentiometer in potentiometers)
+        {
+            if (loop.Contains(potentiometer.GetPositiveTerminal()) && loop.Contains(potentiometer.GetVariableTerminal()))
+            {
+                totalResistance += potentiometer.Resistance;
+            }
+            else if (loop.Contains(potentiometer.GetPositiveTerminal()) && loop.Contains(potentiometer.GetMaxTerminal()))
+            {
+                totalResistance += potentiometer.FixedResistance;
+            }
+        }
 
-        // Map the power to LED intensity
-        float maxIntensity = 59f;
-        float intensity = Mathf.Lerp(maxIntensity, 0f, Mathf.InverseLerp(1f, 10000f, resistance));
-        return intensity;
+        // If no potentiometers are found, set a default resistance
+        if (totalResistance == 0f)
+        {
+            totalResistance = 59f; // Default resistance value
+        }
+
+        return CalculateLEDIntensity(led, totalResistance, batteryVoltage);
     }
 
-    // Check if the circuit is closed by detecting loops
-    private bool lastCircuitState = false; // Store the last known state of the circuit
 
-    public bool IsCircuitClosed()
+    private bool debugPrinted = false; // Flag to track if debug statements have been printed
+    private float CalculateLEDIntensity(LED led, float resistance, float batteryVoltage)
+    {
+        const float ledVoltage = 2.2f;
+        const float maxCurrent = 0.02f; // Maximum current in A (20mA) for the LED
+        const float minCurrent = 0.002f; // Minimum current in A (2mA) for visibility
+        const float maxIntensity = 59f; // Maximum intensity value
+        const float minIntensity = 0f;
+
+
+        float resistorVoltage = batteryVoltage - ledVoltage;
+        float minSafeResistance = resistorVoltage / maxCurrent;
+        float maxSafeResistance = resistorVoltage / minCurrent;
+
+        if (!debugPrinted)
+        {
+            Debug.Log($"Max resistance value to turn on is: {maxSafeResistance}");
+            Debug.Log($"Min safe resistance value is: {minSafeResistance}");
+            debugPrinted = true; // Set the flag to true to prevent further printing
+        }
+
+        if (resistance <= 0f)
+        {
+            Debug.LogWarning("Resistance is too low. LED will be damaged.");
+            return maxIntensity; // Return max intensity as a warning state
+        }
+
+        // Calculate the current using Ohm's Law: I = V / R
+        float current = resistorVoltage / resistance;
+
+        if (current > maxCurrent)
+        {
+            Debug.LogWarning("Current is too high. LED will be damaged.");
+            return maxIntensity; // Return max intensity as a warning state
+        }
+
+        // If resistance is above the maximum safe resistance, the LED won't turn on
+        if (resistance > maxSafeResistance)
+        {
+            return minIntensity;
+        }
+
+        // If current is below the minimum threshold, the LED won't turn on
+        if (current < minCurrent)
+        {
+            return 0f;
+        }
+
+        // Calculate the power dissipated across the LED: P = V * I
+        float power = ledVoltage * current;
+
+        // Map the power to LED intensity using a non-linear function (e.g., quadratic)
+        float intensity = Mathf.Pow(power / (ledVoltage * maxCurrent), 1f) * maxIntensity; // Quadratic mapping for more realistic brightness perception
+
+        // Clamp the intensity to ensure it stays within the expected range
+        return Mathf.Clamp(intensity, 0f, maxIntensity);
+    }
+
+
+
+
+    // Check if the circuit is closed by detecting loops
+    //private bool lastCircuitState = false; // Store the last known state of the circuit
+
+    private List<HashSet<Node>> GroupNodesByBattery()
+    {
+        var batteryGroups = new List<HashSet<Node>>();
+
+        foreach (var battery in batteries)
+        {
+            var group = new HashSet<Node>();
+            var nodeQueue = new Queue<Node>();
+
+            nodeQueue.Enqueue(battery.positiveTerminal);
+            group.Add(battery.positiveTerminal);
+
+            while (nodeQueue.Count > 0)
+            {
+                var currentNode = nodeQueue.Dequeue();
+
+                foreach (var connectedNode in currentNode.ConnectedNodes)
+                {
+                    if (!group.Contains(connectedNode))
+                    {
+                        group.Add(connectedNode);
+                        nodeQueue.Enqueue(connectedNode);
+                    }
+                }
+            }
+            batteryGroups.Add(group);
+        }
+        return batteryGroups;
+    }
+
+
+    public bool IsCircuitClosed(HashSet<Node> batteryGroup)
     {
         var visitedNodes = new HashSet<Node>();
         var parentNodes = new Dictionary<Node, Node>();
         var nodeQueue = new Queue<Node>();
 
-        // Find all powered nodes
-        var poweredNodes = nodes.FindAll(n => n.IsPowered);
-        if (poweredNodes.Count == 0)
+        var poweredNodes = batteryGroup.Where(node => node.IsPowered).ToList();
+
+        if (!poweredNodes.Any())
         {
-            if (lastCircuitState != false)
-            {
-                Debug.LogWarning("No powered node found. Circuit cannot be closed.");
-                lastCircuitState = false;
-            }
             return false;
         }
 
@@ -417,35 +525,27 @@ public class CircuitManager : MonoBehaviour
                 var currentNode = nodeQueue.Dequeue();
                 foreach (var connectedNode in currentNode.ConnectedNodes)
                 {
-                    if (!visitedNodes.Contains(connectedNode))
+                    if (batteryGroup.Contains(connectedNode))
                     {
-                        visitedNodes.Add(connectedNode);
-                        parentNodes[connectedNode] = currentNode;
-                        nodeQueue.Enqueue(connectedNode);
-                    }
-                    else if (parentNodes.ContainsKey(currentNode) && parentNodes[currentNode] != connectedNode)
-                    {
-                        if (lastCircuitState != true)
+                        if (!visitedNodes.Contains(connectedNode))
                         {
-                            Debug.Log("Circuit is closed.");
-                            lastCircuitState = true;
+                            visitedNodes.Add(connectedNode);
+                            parentNodes[connectedNode] = currentNode;
+                            nodeQueue.Enqueue(connectedNode);
                         }
-                        return true; // A loop is detected
+                        else if (parentNodes.ContainsKey(currentNode) && parentNodes[currentNode] != connectedNode)
+                        {
+                            return true;
+                        }
                     }
                 }
             }
 
-            // Clear visited nodes and queue for the next start node
             visitedNodes.Clear();
             parentNodes.Clear();
             nodeQueue.Clear();
         }
 
-        if (lastCircuitState != false)
-        {
-            Debug.Log("Circuit is not closed.");
-            lastCircuitState = false;
-        }
         return false;
     }
 
@@ -463,7 +563,7 @@ public class CircuitManager : MonoBehaviour
         return false;
     }
 
-    public bool IsPartOfClosedLoop(Node startNode, Node endNode)
+    public bool IsPartOfClosedLoop(Node startNode, Node endNode, HashSet<Node> loop)
     {
         var visitedNodes = new HashSet<Node>();
         var nodeQueue = new Queue<Node>();
@@ -475,14 +575,17 @@ public class CircuitManager : MonoBehaviour
             var currentNode = nodeQueue.Dequeue();
             foreach (var connectedNode in currentNode.ConnectedNodes)
             {
-                if (!visitedNodes.Contains(connectedNode))
+                if (loop.Contains(connectedNode))
                 {
-                    visitedNodes.Add(connectedNode);
-                    nodeQueue.Enqueue(connectedNode);
-                }
-                else if (connectedNode == endNode)
-                {
-                    return true; // If we reach the end node, it's a closed loop
+                    if (!visitedNodes.Contains(connectedNode))
+                    {
+                        visitedNodes.Add(connectedNode);
+                        nodeQueue.Enqueue(connectedNode);
+                    }
+                    else if (connectedNode == endNode)
+                    {
+                        return true;
+                    }
                 }
             }
         }
@@ -495,6 +598,45 @@ public class CircuitManager : MonoBehaviour
         foreach (var led in leds)
         {
             led?.TurnOff(); // Always turn off LEDs if the circuit is open
+        }
+    }
+
+    private List<HashSet<Node>> IdentifyIndependentLoops()
+    {
+        var loops = new List<HashSet<Node>>();
+        var visitedNodes = new HashSet<Node>();
+
+        foreach (var node in nodes)
+        {
+            if (!visitedNodes.Contains(node))
+            {
+                var loop = new HashSet<Node>();
+                ExploreLoop(node, loop, visitedNodes);
+                loops.Add(loop);
+            }
+        }
+        return loops;
+    }
+
+    private void ExploreLoop(Node currentNode, HashSet<Node> loop, HashSet<Node> visitedNodes)
+    {
+        var nodeQueue = new Queue<Node>();
+        nodeQueue.Enqueue(currentNode);
+        loop.Add(currentNode);
+        visitedNodes.Add(currentNode);
+
+        while (nodeQueue.Count > 0)
+        {
+            var node = nodeQueue.Dequeue();
+            foreach (var connectedNode in node.ConnectedNodes)
+            {
+                if (!visitedNodes.Contains(connectedNode))
+                {
+                    loop.Add(connectedNode);
+                    visitedNodes.Add(connectedNode);
+                    nodeQueue.Enqueue(connectedNode);
+                }
+            }
         }
     }
 }
