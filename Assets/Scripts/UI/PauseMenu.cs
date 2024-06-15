@@ -1,6 +1,10 @@
+using System;
+using System.IO;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using TMPro;
 
 
 public class PauseMenu : MonoBehaviour
@@ -8,6 +12,12 @@ public class PauseMenu : MonoBehaviour
     public string mainMenu;
     public GameObject pauseMenu;
     public GameObject mainCanvas;
+    public Button saveButton;
+    public TMP_Text saveProgressText;
+
+    public InventoryManager inventoryManager;
+    public SaveLoadManager saveLoadManager;
+
     [SerializeField] private FirstPersonCam firstPersonCam;
     public bool isPaused;
 
@@ -17,6 +27,9 @@ public class PauseMenu : MonoBehaviour
         if (mainCanvas != null) mainCanvas.SetActive(true);
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+
+        inventoryManager = FindObjectOfType<InventoryManager>();
+        saveLoadManager = FindObjectOfType<SaveLoadManager>();
     }
 
     // Update is called once per frame
@@ -75,5 +88,14 @@ public class PauseMenu : MonoBehaviour
         // Lock and hide cursor
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    public void OnSaveButtonClicked()
+    {
+        saveLoadManager.SaveGame(inventoryManager);
+    }
+    public void OnLoadButtonClicked()
+    {
+        saveLoadManager.LoadGame(inventoryManager);
     }
 }

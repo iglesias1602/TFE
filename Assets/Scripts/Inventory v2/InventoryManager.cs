@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -72,6 +73,19 @@ public class InventoryManager : MonoBehaviour
         pauseMenu = FindObjectOfType<PauseMenu>();
     }
 
+    public SlotClass[] GetItems()
+    {
+        return items;
+    }
+
+    public void ClearInventory()
+    {
+        foreach (var slot in items)
+        {
+            slot.Clear();
+        }
+    }
+
     private void Update()
     {
         if (pauseMenu != null && pauseMenu.isPaused) return;
@@ -120,6 +134,12 @@ public class InventoryManager : MonoBehaviour
 
         hotbarSelector.transform.position = hotbarSlots[selectedSlotIndex].transform.position;
         selectedItem = items[selectedSlotIndex + (hotbarSlots.Length * 3)].GetItem();
+    }
+
+    private List<ItemClass> GetAllItems()
+    {
+        // This should return a list of all available ItemClass instances in the game
+        return new List<ItemClass>(); // Replace with actual implementation
     }
 
     #region Toggle Inventory feature
