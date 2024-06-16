@@ -41,6 +41,12 @@ public class InventoryManager : MonoBehaviour
     {
         inventoryUI.SetActive(false);
 
+        if (slotHolder.transform.childCount == 0)
+        {
+            Debug.LogError("Slot holder has no children. Please ensure slots are added as children.");
+            return;
+        }
+
         slots = new GameObject[slotHolder.transform.childCount];
         items = new SlotClass[slots.Length];
 
@@ -80,6 +86,12 @@ public class InventoryManager : MonoBehaviour
 
     public void ClearInventory()
     {
+        if (items == null)
+        {
+            Debug.LogError("Items array is null. Make sure it is initialized properly.");
+            return;
+        }
+
         foreach (var slot in items)
         {
             slot.Clear();
@@ -134,6 +146,19 @@ public class InventoryManager : MonoBehaviour
 
         hotbarSelector.transform.position = hotbarSlots[selectedSlotIndex].transform.position;
         selectedItem = items[selectedSlotIndex + (hotbarSlots.Length * 3)].GetItem();
+    }
+
+    public List<ItemClass> GetAllItems()
+    {
+        List<ItemClass> allItems = new List<ItemClass>();
+        foreach (var slot in items)
+        {
+            if (slot.GetItem() != null)
+            {
+                allItems.Add(slot.GetItem());
+            }
+        }
+        return allItems;
     }
 
     #region Toggle Inventory feature
@@ -217,6 +242,7 @@ public class InventoryManager : MonoBehaviour
             }
         }
         RefreshHotbar();
+        Debug.Log("Inventory UI refreshed.");
     }
 
     public void RefreshHotbar()
@@ -243,6 +269,8 @@ public class InventoryManager : MonoBehaviour
 
     public bool Add(ItemClass item, int quantity)
     {
+        Debug.Log($"Attempting to add item: {item.ItemName}, Quantity: {quantity}");
+
         // check if inventory contains item
         SlotClass slot = Contains(item);
         if (slot != null && slot.GetItem().isStackable)

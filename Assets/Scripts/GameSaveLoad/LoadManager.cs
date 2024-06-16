@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.IO;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro; // Add this for TextMeshPro
@@ -10,8 +12,9 @@ using Postgrest.Models;
 using Postgrest.Attributes;
 using Newtonsoft.Json;
 using com.example;  // Add this line to reference the SupabaseManager namespace
+using UnityEngine.SceneManagement;
 
-namespace GameSaveLoad
+namespace SaveLoad
 {
     [Table("save_files")]
     public class InventoryDataModel : BaseModel
@@ -26,16 +29,18 @@ namespace GameSaveLoad
         public string Filename { get; set; }
 
         [Column("is_available")]
-        public string IsAvailable { get; set; }
+        public bool IsAvailable { get; set; }
 
-        // [Column("file")] // Remove or comment out this line if not needed
-        // public string File { get; set; }
+        [Column("file")]
+        public Dictionary<string, object> File { get; set; }
     }
 
     public class LoadManager : MonoBehaviour
     {
-        public Transform contentTransform;  // Assign the Content GameObject of the Scroll View in the Inspector
-        public GameObject rowPrefab;  // Assign the Row prefab in the Inspector
+        public Transform contentTransform; 
+        public GameObject rowPrefab; 
+        public Button fetchButton; 
+        public string nextScene;
 
         private void Start()
         {
@@ -51,6 +56,15 @@ namespace GameSaveLoad
                 return;
             }
 
+            if (fetchButton == null)
+            {
+                Debug.LogError("Fetch Button is not assigned!");
+                return;
+            }
+
+            fetchButton.onClick.AddListener(FetchAndDisplayFilenames);
+
+            // Auto-fetch the filenames when the scene loads
             FetchAndDisplayFilenames();
         }
 
@@ -58,7 +72,12 @@ namespace GameSaveLoad
         {
             try
             {
-                var response = await SupabaseManager.Instance.Supabase().From<InventoryDataModel>().Get();
+                var response = await SupabaseManager.Instance.Supabase()
+                     .From<InventoryDataModel>()
+                     .Where(x => x.IsAvailable == true)
+                     .Select("id, filename, created_at")
+                     .Get();
+
                 List<InventoryDataModel> maps = response.Models;
 
                 // Clear any existing children in the Content GameObject
@@ -107,10 +126,61 @@ namespace GameSaveLoad
             }
         }
 
-        private void OnMapSelected(InventoryDataModel map)
+        private async void OnMapSelected(InventoryDataModel map)
         {
-            Debug.Log($"Selected map: {map.Filename}");
-            // Add your selection logic here
+            try
+            {
+                var response = await SupabaseManager.Instance.Supabase()
+                    .From<InventoryDataModel>()
+                    .Where(x => x.Id == map.Id)
+                    .Select("file")
+                    .Single();
+
+                if (response != null && response.File != null)
+                {
+                    string fileContent = JsonConvert.SerializeObject(response.File);
+                    Debug.Log($"Fetched file content: {fileContent}");
+
+                    // Save the file content to a .json file
+                    string saveFilePath = Path.Combine(Application.persistentDataPath, $"{map.Filename}.json");
+                    File.WriteAllText(saveFilePath, fileContent);
+                    Debug.Log($"File saved to: {saveFilePath}");
+
+                    SaveFileManager.Instance.SaveFilePath = saveFilePath;
+
+                    // Load the next scene asynchronously
+                    StartCoroutine(LoadSceneAndInitializeGameLoader(nextScene));
+                }
+                else
+                {
+                    Debug.LogWarning("No file content found.");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Error fetching file content from Supabase: {e.Message}");
+            }
+        }
+
+        private IEnumerator LoadSceneAndInitializeGameLoader(string sceneName)
+        {
+            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneName);
+
+            while (!asyncLoad.isDone)
+            {
+                yield return null;
+            }
+
+            // Scene is loaded, now initialize the GameLoader
+            GameLoader gameLoader = FindObjectOfType<GameLoader>();
+            if (gameLoader != null)
+            {
+                gameLoader.Initialize();
+            }
+            else
+            {
+                Debug.LogError("GameLoader not found in the loaded scene.");
+            }
         }
     }
 }
