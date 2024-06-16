@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dccb9d0d73183bf419ae59f70dcba391, type: 3}
   m_Name: potentiometer
   m_EditorClassIdentifier: 
-  ItemName: potentiometer
+  ItemName: Potentiometer
   itemIcon: {fileID: 21300000, guid: 3e38fad8d795c3a499efacba49f8fe14, type: 3}
   isStackable: 1
   itemPrefab: {fileID: 766623882490484362, guid: ec652b0497944a688f9aa8311afe75fd, type: 3}

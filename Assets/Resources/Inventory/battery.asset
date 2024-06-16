@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dccb9d0d73183bf419ae59f70dcba391, type: 3}
   m_Name: battery
   m_EditorClassIdentifier: 
-  ItemName: battery
+  ItemName: Battery
   itemIcon: {fileID: 21300000, guid: 87fe76b15c8958a4c9d7bd1460c7378e, type: 3}
   isStackable: 1
   itemPrefab: {fileID: 305773342676478503, guid: e2472e33deab4d4c85b34d70c473ce4a, type: 3}

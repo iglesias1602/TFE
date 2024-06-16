@@ -12,7 +12,6 @@ public class PotentiometerMenu : MonoBehaviour
     [SerializeField] private Button confirmButton;
     private FirstPersonCam firstPersonCam;
 
-
     private Potentiometer currentPotentiometer;
     public static bool isMenuOpen = false;
 

@@ -290,7 +290,7 @@ public class FirstPersonCam : MonoBehaviour
         }
     }
 
-    /*private void AddLEDToCircuit(LED newLED)
+    private void AddLEDToCircuit(LED newLED)
     {
         if (!CircuitManager.Instance.leds.Contains(newLED))
         {
@@ -313,7 +313,7 @@ public class FirstPersonCam : MonoBehaviour
         {
             Debug.LogError($"LED {newLED.name} terminals are not properly assigned.");
         }
-    }*/
+    }
 
     private Vector3 GetSpawnPosition()
     {
