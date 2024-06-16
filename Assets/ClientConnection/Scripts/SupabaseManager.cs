@@ -9,6 +9,8 @@ namespace com.example
 {
     public class SupabaseManager : MonoBehaviour
     {
+        public static SupabaseManager Instance { get; private set; }
+
         // Public Unity references
         public SessionListener SessionListener = null!;
         public SupabaseSettings SupabaseSettings = null!;
@@ -23,8 +25,17 @@ namespace com.example
         // Expose the client to other components
         public Client? Supabase() => _client;
 
-        private async void Start()
+        private async void Awake()
         {
+            if (Instance != null && Instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+
             SupabaseOptions options = new()
             {
                 AutoRefreshToken = true // Automatically refresh the token

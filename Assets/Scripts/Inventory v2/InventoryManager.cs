@@ -24,7 +24,7 @@ public class InventoryManager : MonoBehaviour
     private SlotClass movingSlot;
     private SlotClass tempSlot;
     private SlotClass originalSlot;
-    bool isMovingItem;
+    private bool isMovingItem;
 
     [SerializeField] private GameObject hotbarSelector;
     [SerializeField] private int selectedSlotIndex = 0;
@@ -136,12 +136,6 @@ public class InventoryManager : MonoBehaviour
         selectedItem = items[selectedSlotIndex + (hotbarSlots.Length * 3)].GetItem();
     }
 
-    private List<ItemClass> GetAllItems()
-    {
-        // This should return a list of all available ItemClass instances in the game
-        return new List<ItemClass>(); // Replace with actual implementation
-    }
-
     #region Toggle Inventory feature
 
     public void SetTubeDrawingEnabled(bool isEnabled)
@@ -211,7 +205,7 @@ public class InventoryManager : MonoBehaviour
                 slots[i].transform.GetChild(0).GetComponent<Image>().enabled = true;
                 slots[i].transform.GetChild(0).GetComponent<Image>().sprite = items[i].GetItem().itemIcon;
                 if (items[i].GetItem().isStackable)
-                    slots[i].transform.GetChild(1).GetComponent<Text>().text = items[i].GetQuantity() + "";
+                    slots[i].transform.GetChild(1).GetComponent<Text>().text = items[i].GetQuantity().ToString();
                 else
                     slots[i].transform.GetChild(1).GetComponent<Text>().text = "";
             }
@@ -234,7 +228,7 @@ public class InventoryManager : MonoBehaviour
                 hotbarSlots[i].transform.GetChild(0).GetComponent<Image>().enabled = true;
                 hotbarSlots[i].transform.GetChild(0).GetComponent<Image>().sprite = items[i + (hotbarSlots.Length * 3)].GetItem().itemIcon;
                 if (items[i + (hotbarSlots.Length * 3)].GetItem().isStackable)
-                    hotbarSlots[i].transform.GetChild(1).GetComponent<Text>().text = items[i + (hotbarSlots.Length * 3)].GetQuantity() + "";
+                    hotbarSlots[i].transform.GetChild(1).GetComponent<Text>().text = items[i + (hotbarSlots.Length * 3)].GetQuantity().ToString();
                 else
                     hotbarSlots[i].transform.GetChild(1).GetComponent<Text>().text = "";
             }

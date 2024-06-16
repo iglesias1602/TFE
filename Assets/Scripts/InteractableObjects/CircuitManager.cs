@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine.Events;
 using System.Linq;
 
+
 public class CircuitManager : MonoBehaviour
 {
     #region Variables
@@ -43,7 +44,7 @@ public class CircuitManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(this.gameObject); // Preserve across scenes
+            //DontDestroyOnLoad(this.gameObject); // Preserve across scenes
         }
         else
         {

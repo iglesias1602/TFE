@@ -97,5 +97,6 @@ public class PauseMenu : MonoBehaviour
     public void OnLoadButtonClicked()
     {
         saveLoadManager.LoadGame(inventoryManager);
+        inventoryManager.RefreshUI();
     }
 }

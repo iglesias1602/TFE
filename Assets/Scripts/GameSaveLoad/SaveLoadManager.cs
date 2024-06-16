@@ -1,7 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using UnityEngine;
+using Supabase;
+using Supabase.Gotrue;
+using Postgrest.Models;
+using Postgrest.Attributes;
+using com.example;  // Add this line to reference the SupabaseManager namespace
 
 [Serializable]
 public class InventorySaveData
@@ -15,6 +21,23 @@ public class SlotSaveData
     public string itemName;
     public int quantity;
 }
+
+[Table("games")]
+public class InventoryDataModel : BaseModel
+{
+    [PrimaryKey("id", false)]
+    public int Id { get; set; }
+
+    [Column("created_at")]
+    public DateTime CreatedAt { get; set; }
+
+    [Column("filename")]
+    public string Filename { get; set; }
+
+    [Column("file")]
+    public string File { get; set; }
+}
+
 
 public class SaveLoadManager : MonoBehaviour
 {
@@ -30,15 +53,15 @@ public class SaveLoadManager : MonoBehaviour
     private void LoadAllItems()
     {
         allItems = new List<ItemClass>();
-        ItemClass[] loadedItems = Resources.LoadAll<ItemClass>("Inventory v2/Items");
+        ItemClass[] loadedItems = Resources.LoadAll<ItemClass>("Inventory");
         foreach (var item in loadedItems)
         {
             allItems.Add(item);
         }
-        Debug.Log($"Loaded {allItems.Count} items from Inventory v2/Items");
+        Debug.Log($"Loaded {allItems.Count} items from Resources/Inventory");
     }
 
-    public void SaveGame(InventoryManager inventoryManager)
+    public async void SaveGame(InventoryManager inventoryManager)
     {
         InventorySaveData inventorySaveData = new InventorySaveData();
 
@@ -58,6 +81,9 @@ public class SaveLoadManager : MonoBehaviour
         string json = JsonUtility.ToJson(inventorySaveData, true);
         File.WriteAllText(savePath, json);
         Debug.Log($"Game Saved to {savePath}");
+
+        // Upload the save data to Supabase
+        await UploadSaveDataToSupabase(json);
     }
 
     public void LoadGame(InventoryManager inventoryManager)
@@ -75,6 +101,10 @@ public class SaveLoadManager : MonoBehaviour
                 if (item != null)
                 {
                     inventoryManager.Add(item, slotData.quantity);
+                }
+                else
+                {
+                    Debug.LogWarning($"Item '{slotData.itemName}' not found");
                 }
             }
 
@@ -95,5 +125,32 @@ public class SaveLoadManager : MonoBehaviour
                 return item;
         }
         return null;
+    }
+
+    private async Task UploadSaveDataToSupabase(string jsonData)
+    {
+        var model = new InventoryDataModel
+        {
+            CreatedAt = DateTime.UtcNow,
+            Filename = "savegame.json",
+            File = jsonData
+        };
+
+        try
+        {
+            var response = await SupabaseManager.Instance.Supabase().From<InventoryDataModel>().Insert(model);
+            if (response.Models != null && response.Models.Count > 0)
+            {
+                Debug.Log("Upload complete!");
+            }
+            else
+            {
+                Debug.LogError("Failed to upload data to Supabase.");
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error uploading data to Supabase: {e.Message}");
+        }
     }
 }

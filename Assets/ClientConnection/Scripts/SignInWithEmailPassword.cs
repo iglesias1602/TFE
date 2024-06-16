@@ -15,7 +15,7 @@ namespace com.example
         public TMP_InputField EmailInput = null!;
         public TMP_InputField PasswordInput = null!;
         public TMP_Text ErrorText = null!;
-        public SupabaseManager SupabaseManager = null!;
+        //public SupabaseManager SupabaseManager = null!;
 
         public string nextScene;
 
@@ -42,7 +42,7 @@ namespace com.example
             if (_doSignOut)
             {
                 _doSignOut = false;
-                await SupabaseManager.Supabase()!.Auth.SignOut();
+                await SupabaseManager.Instance.Supabase()!.Auth.SignOut();
             }
 
             if (_doSignIn)
@@ -58,7 +58,7 @@ namespace com.example
         {
             try
             {
-                Session session = (await SupabaseManager.Supabase()!.Auth.SignIn(EmailInput.text, PasswordInput.text))!;
+                Session session = (await SupabaseManager.Instance.Supabase()!.Auth.SignIn(EmailInput.text, PasswordInput.text))!;
                 ErrorText.text = $"Success! Signed In as {session.User?.Email}";
                 Debug.Log($"Success! Signed In as {session.User?.Email}");
 
@@ -77,6 +77,7 @@ namespace com.example
                 Debug.Log(e.Message, gameObject);
                 Debug.Log(e, gameObject);
             }
+
         }
     }
 }
